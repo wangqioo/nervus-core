@@ -1,0 +1,23 @@
+# 排除不需要进入 Docker build context 的文件
+# build context 是 nervus/ 根目录，只需要 nervus-sdk/ 和 apps/
+
+# 基础设施配置（容器内不需要）
+nats/
+redis/
+caddy/
+postgres/
+ios-shell/
+
+# 日志、临时文件
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.git/
+.gitignore
+
+# 模型文件（通过 volume 挂载，不走 build context）
+models/
+*.gguf
+*.bin

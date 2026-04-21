@@ -1,117 +1,180 @@
-# Nervus · 从未停止存在的系统
+# Nervus
 
-> 连接所有 App 的神经系统。本地 AI 24 小时常驻，跨应用智能联动，把你的一生存进一个盒子里。
-
----
-
-## 这是什么
-
-Nervus 不是一个 App，不是一个平台，不是一个助手。
-
-**它是连接所有 App 的神经系统。**
-
-它运行在你的边缘设备上，永不停止。所有子 App 共享同一套感知、同一套记忆、同一套行动能力。用户不需要主动管理信息——信息自己找到它该去的地方。
-
-```
-你拍了一张餐厅的照片 → 热量 App 自动记录，你什么都没做
-你开完了一个会 → 录音 + 白板照片自动整合成完整报告
-你最近压力很大 → 系统感知到，主动建议调整明天的日程
-```
+> 连接所有 App 的神经系统
 
 **它从未停止存在过。**
 
 ---
 
-## 核心架构
+## 项目结构
 
 ```
-感知层（照片/录音/日历/RSS）
-    ↓
-Synapse Bus（NATS 事件总线）
-    ↓
-Arbor Core（本地 AI 神经中枢 · Qwen3.5-4B 多模态 · 24h 常驻）
-    ↓
-App Layer（20个 App · 通过 NSI 接口互联）
-    ↓
-Memory Graph（长期记忆 · PostgreSQL + pgvector）
-Context Graph（当下状态 · Redis）
+nervus/
+├── docker-compose.yml          # 一键启动所有服务
+├── nats/                       # NATS 突触总线配置
+├── redis/                      # Redis Context Graph 配置
+├── postgres/                   # PostgreSQL Memory Graph 初始化 SQL
+├── caddy/                      # 反向代理配置（局域网 HTTPS）
+├── whisper/                    # faster-whisper 语音转写服务
+├── arbor-core/                 # Nervus 神经路由中枢
+│   ├── router/                 # 快速/语义/动态三种路由引擎
+│   ├── executor/               # Flow 执行引擎 + 流程加载器
+│   ├── flows/                  # JSON 流程配置
+│   └── api/                    # App 注册、通知、状态 API
+├── nervus-sdk/                 # Python SDK
+└── nervus-sdk-ts/              # TypeScript SDK
+apps/
+├── calorie-tracker/            # 热量管理（拍照自动记录）
+├── meeting-notes/              # 会议纪要（录音+白板自动整合）
+├── photo-scanner/              # 相册扫描器（感知层）
+├── knowledge-base/             # 知识库（语义检索+问答）
+├── life-memory/                # 人生记忆库（旅行日志+时间线）
+└── sense/                      # 感知页数据服务
 ```
 
 ---
 
-## 双大脑架构
+## 快速开始
 
-| | 本地小模型（常驻） | 云端大模型（按需） |
-|--|--|--|
-| 模型 | Qwen3.5-4B 多模态 | GPT-4o / Claude |
-| 角色 | 慢性记忆 · 潜意识 | 急性思维 · 意识 |
-| 工作时机 | 24h 不间断 | 需要深度推理时 |
-| 成本 | 零 · 完全本地 | 按需付费 |
+### 1. 启动基础设施
 
----
+```bash
+docker compose up -d nats redis postgres caddy
+```
 
-## 硬件
+### 2. 准备 AI 模型
 
-**NVIDIA Jetson Orin Nano 8GB**
+```bash
+# 下载 Qwen3.5-4B 多模态模型到 models/ 目录
+mkdir -p models
+# 从 HuggingFace 下载 qwen3.5-4b-multimodal-q4_k_m.gguf 和 mmproj 文件
+```
 
-- 专用边缘计算设备，永远在线
-- Qwen3.5-4B 多模态 GGUF 模型 via llama.cpp
-- 所有数据本地存储，不上云
+### 3. 启动 AI 服务（Jetson 上）
 
----
+```bash
+# 带 CUDA 加速
+docker compose up -d llama-cpp whisper
 
-## 技术栈
+# x86 开发机（无 CUDA）
+docker compose --profile dev up -d llama-cpp-dev whisper
+```
 
-| 职责 | 技术 |
-|------|------|
-| 容器编排 | Docker Compose |
-| 事件总线 | NATS + JetStream |
-| 当下状态 | Redis（Context Graph） |
-| 长期记忆 | PostgreSQL + pgvector（Memory Graph） |
-| 本地 AI | llama.cpp server + Qwen3.5-4B 多模态 |
-| 语音转写 | faster-whisper |
-| AI 中枢 | Python + FastAPI（Arbor Core） |
-| App 后端 | FastAPI / Fastify |
-| 移动端壳 | Capacitor.js（iOS 优先） |
-| 内部 SDK | nervus-sdk（自研） |
+### 4. 启动 Arbor Core 和所有 App
 
----
+```bash
+docker compose up -d arbor-core app-calorie-tracker app-meeting-notes app-photo-scanner app-knowledge-base app-life-memory app-sense
+```
 
-## 仓库文件
+### 5. 验收测试
 
-| 文件 | 说明 |
-|------|------|
-| [`Nervus_完整开发文档.md`](./Nervus_完整开发文档.md) | 完整开发文档：架构·设计·契约·计划 |
-| [`app-prototype.html`](./app-prototype.html) | 前端交互原型（可直接浏览器打开） |
+```bash
+# AI 服务
+curl http://localhost:8080/health
 
----
+# NATS 消息总线
+curl http://localhost:8222
 
-## 开发计划概览
+# 系统状态
+curl http://localhost:8090/status
 
-| Sprint | 内容 | 目标 |
-|--------|------|------|
-| Sprint 0 | 基础设施 | Docker + NATS + Redis + PostgreSQL + llama.cpp |
-| Sprint 1 | nervus-sdk | 5 行代码接入生态 |
-| Sprint 2 | Arbor Core | 神经中枢，三种路由模式 |
-| Sprint 3 | 第一条数据流 | 照片 → 热量自动记录，端到端跑通 |
-| Sprint 4 | Memory Graph | 长期记忆 + Sense 页数据化 |
-| Sprint 5 | App NSI 接入 | 20个 App 打通，旗舰体验可用 |
-| Sprint 6 | Capacitor iOS | 完整移动端 MVP |
-
-详细任务清单和验收标准见 [完整开发文档](./Nervus_完整开发文档.md)。
+# 发布测试事件
+curl -X POST http://localhost:4222 -d '...'
+```
 
 ---
 
-## 两个旗舰体验
+## 核心概念
 
-**人生记忆库** · 把你的一生，存进一个盒子里
+### Synapse Bus（突触总线）
 
-> 自动收集照片、视频、行程、笔记。自动生成年度回忆录、旅行日志、孩子成长瞬间。
+所有数据通过 NATS 事件总线流动。主题命名规范：
 
-**私人知识大脑** · 你看过的所有东西，都变成你的第二大脑
+```
+{domain}.{entity}.{verb}
 
-> 自动收录文章、PDF、视频字幕、会议录音。语义检索，随时问答。
+media.photo.classified
+meeting.recording.processed
+health.calorie.meal_logged
+context.user_state.updated
+knowledge.document.indexed
+```
+
+### NSI（Nervus Standard Interface）
+
+每个 App 必须实现：
+
+```
+GET  /manifest    能力声明
+POST /intake/:id  接收事件
+POST /action/:id  执行能力
+GET  /state       当前状态
+GET  /health      健康检查
+```
+
+### Context Graph
+
+用户当下状态，存储在 Redis，所有 App 共享：
+
+```
+physical.last_meal / calorie_remaining
+cognitive.load (low/medium/high)
+temporal.day_type / time_of_day
+travel.is_traveling / current_trip
+social.recent_meeting
+```
+
+### Memory Graph
+
+长期记忆，存储在 PostgreSQL + pgvector：
+
+- `life_events` — 人生事件（照片、会议、旅行）
+- `knowledge_items` — 知识条目（文章、PDF、笔记）
+- `item_relations` — 条目间的语义关联
 
 ---
 
-*Nervus · 从未停止存在的系统*
+## 开发新 App（Python）
+
+```python
+from nervus_sdk import NervusApp, Context, emit
+from nervus_sdk.models import Event
+
+app = NervusApp("my-app")
+
+@app.on("media.photo.classified", filter={"tags_contains": ["food"]})
+async def handle_food(event: Event):
+    result = await app.llm.vision(event.payload["photo_path"], "识别食物")
+    await Context.set("physical.last_meal", event.timestamp)
+    await emit("health.calorie.meal_logged", result)
+
+@app.action("my_action")
+async def my_action(param: str = "") -> dict:
+    return {"result": param}
+
+@app.state
+async def get_state() -> dict:
+    return {"status": "ok"}
+
+app.run(port=8001)
+```
+
+---
+
+## 硬件要求
+
+- **推荐：** NVIDIA Jetson Orin Nano 8GB（JetPack 6.x）
+- **开发调试：** 任意 x86/ARM Linux（禁用 CUDA，使用 CPU 推理）
+
+### 内存预算（Jetson）
+
+| 组件 | 内存 |
+|---|---|
+| 系统底层 | ~1.5GB |
+| Qwen3.5-4B 多模态 INT4 | ~2.8GB |
+| Redis + PostgreSQL + NATS | ~550MB |
+| Arbor Core + 6 个 App | ~1.2GB |
+| faster-whisper（按需） | ~500MB |
+| **常驻合计** | **~6.3GB** |
+| **峰值（转写中）** | **~6.8GB** |
+

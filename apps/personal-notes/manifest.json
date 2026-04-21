@@ -1,0 +1,14 @@
+{
+  "id": "personal-notes",
+  "name": "个人笔记",
+  "version": "1.0.0",
+  "description": "笔记创建后自动发布到知识总线",
+  "subscribes": [],
+  "publishes": ["knowledge.note.created"],
+  "actions": [
+    { "name": "create_note", "description": "创建笔记", "input": { "title": "string", "content": "string" }, "output": { "note_id": "string" } }
+  ],
+  "context_reads": [],
+  "context_writes": [],
+  "memory_writes": []
+}

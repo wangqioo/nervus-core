@@ -1,0 +1,43 @@
+{
+  "id": "knowledge-base",
+  "name": "知识库",
+  "version": "1.0.0",
+  "description": "统一收录所有知识来源，语义检索，AI 问答",
+  "subscribes": [
+    { "subject": "knowledge.document.indexed", "filter": {}, "handler": "/intake/document_indexed" },
+    { "subject": "knowledge.article.fetched", "filter": {}, "handler": "/intake/article_fetched" },
+    { "subject": "knowledge.note.created", "filter": {}, "handler": "/intake/note_created" },
+    { "subject": "knowledge.video.transcribed", "filter": {}, "handler": "/intake/video_transcribed" },
+    { "subject": "meeting.recording.processed", "filter": {}, "handler": "/intake/meeting_processed" }
+  ],
+  "publishes": [],
+  "actions": [
+    {
+      "name": "embed_and_store",
+      "description": "向量化并存入 Memory Graph",
+      "input": { "type": "string", "title": "string", "content": "string", "source_url": "string" },
+      "output": { "item_id": "string" }
+    },
+    {
+      "name": "semantic_search",
+      "description": "语义检索知识库",
+      "input": { "query": "string", "limit": "number", "type_filter": "string" },
+      "output": { "results": "array" }
+    },
+    {
+      "name": "ask",
+      "description": "基于知识库回答问题",
+      "input": { "question": "string" },
+      "output": { "answer": "string", "sources": "array" }
+    },
+    {
+      "name": "index_meeting",
+      "description": "索引会议纪要",
+      "input": { "meeting_id": "string", "transcript": "string", "summary": "object" },
+      "output": { "item_id": "string" }
+    }
+  ],
+  "context_reads": [],
+  "context_writes": [],
+  "memory_writes": ["knowledge.knowledge_items"]
+}

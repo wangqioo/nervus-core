@@ -1,0 +1,14 @@
+{
+  "id": "video-transcriber",
+  "name": "视频转录",
+  "version": "1.0.0",
+  "description": "视频音轨转写文字后发布到知识总线",
+  "subscribes": [],
+  "publishes": ["knowledge.video.transcribed"],
+  "actions": [
+    { "name": "transcribe_video", "description": "转写视频", "input": { "video_path": "string" }, "output": { "transcript": "string", "title": "string" } }
+  ],
+  "context_reads": [],
+  "context_writes": [],
+  "memory_writes": []
+}

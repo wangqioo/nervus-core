@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Nervus</title>
+
+  <style>
+    /* ── 设计系统 ── */
+    :root {
+      --bg:           #0d0d0d;
+      --surface:      #161616;
+      --surface2:     #1e1e1e;
+      --border:       rgba(255,255,255,0.07);
+      --accent:       #00D4AA;
+      --accent-dim:   rgba(0,212,170,0.15);
+      --warn:         #FF6B35;
+      --warn-dim:     rgba(255,107,53,0.15);
+      --text:         #e8e8e8;
+      --text-secondary: #888;
+      --text-dim:     #555;
+      --radius:       14px;
+      --radius-sm:    8px;
+      --safe-top:     env(safe-area-inset-top);
+      --safe-bottom:  env(safe-area-inset-bottom);
+      --tab-h:        calc(56px + var(--safe-bottom));
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+      height: 100%;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── 布局骨架 ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* ── 顶部状态条 ── */
+    #top-bar {
+      padding: calc(var(--safe-top) + 12px) 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 10;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+    .app-title span { color: var(--accent); }
+
+    /* 连接状态指示 */
+    #conn-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    #conn-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: background 0.4s;
+    }
+    #conn-dot.connected   { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    #conn-dot.searching   { background: #f5a623; animation: pulse 1s infinite; }
+    #conn-dot.error       { background: var(--warn); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── 标签页内容区 ── */
+    #pages {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .page {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 16px calc(var(--tab-h) + 8px);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .page.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    /* ── 标签栏 ── */
+    #tab-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--tab-h);
+      background: rgba(13,13,13,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: var(--safe-bottom);
+      z-index: 100;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding-top: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn svg { width: 22px; height: 22px; stroke-width: 1.8; fill: none; stroke: currentColor; }
+
+    /* ── 通用卡片 ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    /* ── Sense 页 ── */
+    #sense-orb-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 8px 0 16px;
+    }
+    #sense-orb {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) 0deg, var(--surface2) 0deg);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      transition: background 1s;
+    }
+    #sense-orb::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: var(--bg);
+    }
+    #sense-orb-label {
+      position: relative;
+      z-index: 1;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    #sense-orb-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .state-item {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+    .state-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+    .state-value { font-size: 15px; font-weight: 600; color: var(--text); }
+
+    /* ── 录音按钮 ── */
+    #record-page { display: flex; flex-direction: column; align-items: center; }
+    #record-btn {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 3px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 24px 0 16px;
+    }
+    #record-btn.recording {
+      border-color: var(--warn);
+      background: var(--warn-dim);
+      animation: record-pulse 1.5s infinite;
+    }
+    #record-btn svg { width: 36px; height: 36px; }
+    @keyframes record-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }
+      50%       { box-shadow: 0 0 0 16px rgba(255,107,53,0); }
+    }
+    #record-timer {
+      font-size: 36px;
+      font-weight: 200;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    #record-status { font-size: 13px; color: var(--text-secondary); }
+
+    /* ── 知识库页 ── */
+    #kb-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      padding: 0 14px;
+      margin-bottom: 14px;
+    }
+    #kb-search input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 15px;
+      padding: 14px 0;
+      outline: none;
+    }
+    #kb-search input::placeholder { color: var(--text-dim); }
+    #kb-search svg { width: 18px; height: 18px; stroke: var(--text-secondary); }
+
+    .kb-item {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .kb-item-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .kb-item-meta  { font-size: 11px; color: var(--text-secondary); }
+    .kb-type-badge {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    /* ── 笔记页 ── */
+    #notes-fab {
+      position: fixed;
+      bottom: calc(var(--tab-h) + 16px);
+      right: 20px;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,212,170,0.4);
+      z-index: 50;
+      transition: transform 0.15s;
+    }
+    #notes-fab:active { transform: scale(0.93); }
+    #notes-fab svg { width: 22px; height: 22px; stroke: #000; fill: none; }
+
+    .note-item {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .note-item-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .note-item-preview {
+      font-size: 12px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .note-item-date { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+    /* ── 新建笔记 modal ── */
+    #note-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    #note-modal.open { opacity: 1; pointer-events: auto; }
+    #note-sheet {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(var(--safe-bottom) + 20px);
+      width: 100%;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    #note-modal.open #note-sheet { transform: none; }
+    #note-sheet input, #note-sheet textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 14px;
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    #note-sheet textarea { min-height: 120px; resize: none; line-height: 1.5; }
+    .sheet-actions { display: flex; gap: 10px; margin-top: 4px; }
+    .btn-primary {
+      flex: 1;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      flex: 1;
+      background: var(--surface2);
+      color: var(--text);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      padding: 14px;
+      cursor: pointer;
+    }
+
+    /* ── 连接提示页 ── */
+    #connecting-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      transition: opacity 0.4s;
+    }
+    #connecting-overlay.hidden { opacity: 0; pointer-events: none; }
+    .conn-logo { font-size: 48px; font-weight: 800; letter-spacing: -2px; color: var(--text); margin-bottom: 8px; }
+    .conn-logo span { color: var(--accent); }
+    .conn-subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+    .conn-spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--surface2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .conn-hint { font-size: 12px; color: var(--text-dim); margin-top: 16px; text-align: center; max-width: 220px; }
+
+    /* ── 空状态 ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .empty-icon { font-size: 36px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- 正在连接 overlay -->
+<div id="connecting-overlay">
+  <div class="conn-logo">Nerv<span>us</span></div>
+  <div class="conn-subtitle">本地 AI 神经系统</div>
+  <div class="conn-spinner"></div>
+  <div class="conn-hint">正在局域网搜索 Nervus 服务器...</div>
+</div>
+
+<div id="app">
+  <!-- 顶部栏 -->
+  <div id="top-bar">
+    <div class="app-title">Nerv<span>us</span></div>
+    <div id="conn-indicator">
+      <div id="conn-dot" class="searching"></div>
+      <span id="conn-label">搜索中</span>
+    </div>
+  </div>
+
+  <!-- 页面容器 -->
+  <div id="pages">
+
+    <!-- ── Sense 感知页 ── -->
+    <div class="page active" id="page-sense">
+      <div id="sense-orb-wrap">
+        <div>
+          <div id="sense-orb">
+            <span id="sense-orb-label">--</span>
+          </div>
+          <div id="sense-orb-sub">认知负荷</div>
+        </div>
+      </div>
+
+      <div class="state-grid">
+        <div class="state-item">
+          <div class="state-label">活动状态</div>
+          <div class="state-value" id="val-activity">--</div>
+        </div>
+        <div class="state-item">
+          <div class="state-label">专注时长</div>
+          <div class="state-value" id="val-focus">--</div>
+        </div>
+        <div class="state-item">
+          <div class="state-label">今日热量</div>
+          <div class="state-value" id="val-calories">--</div>
+        </div>
+        <div class="state-item">
+          <div class="state-label">下个日程</div>
+          <div class="state-value" id="val-next-event">--</div>
+        </div>
+      </div>
+
+      <div class="card" id="sense-suggestions-card">
+        <div class="card-title">AI 建议</div>
+        <div id="sense-suggestions">
+          <div class="empty-state"><div class="empty-icon">◎</div>加载中...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">最近事件</div>
+        <div id="sense-events">
+          <div class="empty-state"><div class="empty-icon">◎</div>暂无事件</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 录音页 ── -->
+    <div class="page" id="page-record">
+      <div id="record-page">
+        <div class="card" style="width:100%; text-align:center; margin-bottom:0">
+          <div class="card-title">会议录音</div>
+          <p style="font-size:13px; color:var(--text-secondary)">录音结束后自动转写并归档到知识库</p>
+        </div>
+
+        <button id="record-btn" onclick="toggleRecording()">
+          <svg id="record-icon" viewBox="0 0 24 24" stroke="var(--warn)" fill="none">
+            <circle cx="12" cy="12" r="5" fill="var(--warn)" stroke="none"/>
+            <circle cx="12" cy="12" r="9"/>
+          </svg>
+        </button>
+
+        <div id="record-timer">00:00</div>
+        <div id="record-status">点击开始录音</div>
+
+        <div class="card" style="width:100%; margin-top:24px">
+          <div class="card-title">最近录音</div>
+          <div id="record-history">
+            <div class="empty-state"><div class="empty-icon">◎</div>暂无录音</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 笔记页 ── -->
+    <div class="page" id="page-notes">
+      <div id="notes-list">
+        <div class="empty-state"><div class="empty-icon">◎</div>还没有笔记</div>
+      </div>
+    </div>
+
+    <!-- ── 知识库页 ── -->
+    <div class="page" id="page-kb">
+      <div id="kb-search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+        <input id="kb-input" type="search" placeholder="搜索知识库..." oninput="onKbSearch(this.value)">
+      </div>
+      <div id="kb-results">
+        <div class="empty-state"><div class="empty-icon">◎</div>输入关键词搜索</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 标签栏 -->
+  <div id="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('sense', this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      感知
+    </button>
+    <button class="tab-btn" onclick="switchTab('record', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      录音
+    </button>
+    <button class="tab-btn" onclick="switchTab('notes', this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      笔记
+    </button>
+    <button class="tab-btn" onclick="switchTab('kb', this)">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      知识库
+    </button>
+  </div>
+</div>
+
+<!-- 新建笔记 modal -->
+<div id="note-modal">
+  <div id="note-sheet">
+    <input id="note-title-input" placeholder="标题" maxlength="100">
+    <textarea id="note-content-input" placeholder="正文内容..."></textarea>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeNoteModal()">取消</button>
+      <button class="btn-primary" onclick="saveNote()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 笔记页 FAB -->
+<button id="notes-fab" style="display:none" onclick="openNoteModal()">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- Capacitor 运行时（cap sync 后自动生成） -->
+<script src="capacitor.js" onerror="void 0"></script>
+<script src="js/nervus-bridge.js" type="module" onerror="void 0"></script>
+
+<script>
+// ── 应用状态 ──────────────────────────────────────────
+
+let serverBase = null;
+let currentTab = 'sense';
+let recordingTimer = null;
+let recordingSeconds = 0;
+let pollInterval = null;
+
+// ── 标签切换 ──────────────────────────────────────────
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  btn.classList.add('active');
+  currentTab = name;
+
+  document.getElementById('notes-fab').style.display = name === 'notes' ? 'flex' : 'none';
+
+  if (name === 'sense') loadSense();
+  if (name === 'notes') loadNotes();
+  if (name === 'record') loadRecordHistory();
+}
+
+// ── 连接状态 ──────────────────────────────────────────
+
+function setConnected(base) {
+  serverBase = base;
+  document.getElementById('conn-dot').className = 'connected';
+  document.getElementById('conn-label').textContent = 'nervus.local';
+  document.getElementById('connecting-overlay').classList.add('hidden');
+  startPolling();
+}
+
+function setDisconnected() {
+  document.getElementById('conn-dot').className = 'error';
+  document.getElementById('conn-label').textContent = '未连接';
+  stopPolling();
+}
+
+// ── API 调用 ──────────────────────────────────────────
+
+async function api(path, opts = {}) {
+  if (!serverBase) throw new Error('未连接');
+  const resp = await fetch(serverBase + path, {
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(8000),
+    ...opts,
+  });
+  if (!resp.ok) throw new Error(resp.status);
+  return resp.json();
+}
+
+function appBase(port) {
+  if (!serverBase) return null;
+  return serverBase.replace(/:(\d+)$/, `:${port}`);
+}
+
+async function appApi(port, path, opts = {}) {
+  const base = appBase(port);
+  if (!base) throw new Error('未连接');
+  const resp = await fetch(base + path, {
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(8000),
+    ...opts,
+  });
+  if (!resp.ok) throw new Error(resp.status);
+  return resp.json();
+}
+
+// ── Sense 页数据加载 ──────────────────────────────────
+
+async function loadSense() {
+  try {
+    const [state, calorie, calendar, logs] = await Promise.allSettled([
+      appApi(8005, '/user-state'),
+      appApi(8001, '/today'),
+      appApi(8011, '/events/upcoming?hours=8'),
+      api('/logs?limit=5'),
+    ]);
+
+    // 认知负荷球
+    const cogLoad = state.value?.cognitive?.load;
+    const loadMap = { low: 20, medium: 50, high: 80 };
+    const loadPct  = loadMap[cogLoad] ?? 0;
+    const orbEl = document.getElementById('sense-orb');
+    const color = cogLoad === 'high' ? '#FF6B35' : '#00D4AA';
+    orbEl.style.background = `conic-gradient(${color} ${loadPct * 3.6}deg, var(--surface2) 0deg)`;
+    document.getElementById('sense-orb-label').textContent = loadPct ? `${loadPct}%` : '--';
+    document.getElementById('sense-orb-sub').textContent =
+      cogLoad ? { low: '轻松', medium: '专注', high: '高负荷' }[cogLoad] : '认知负荷';
+
+    // 状态格子
+    const phys = state.value?.physical || {};
+    const temp = state.value?.temporal || {};
+    document.getElementById('val-activity').textContent = phys.activity || '--';
+    document.getElementById('val-focus').textContent = temp.focus_duration || '--';
+    document.getElementById('val-calories').textContent =
+      calorie.value ? `${calorie.value.total_calories || 0} kcal` : '--';
+    const nextEv = calendar.value?.events?.[0];
+    document.getElementById('val-next-event').textContent =
+      nextEv ? nextEv.title.slice(0, 8) : '--';
+
+    // 建议
+    renderSuggestions(state.value?.suggestions || []);
+
+    // 事件流
+    renderEvents(logs.value?.logs || []);
+
+  } catch (e) {}
+}
+
+function renderSuggestions(suggestions) {
+  const el = document.getElementById('sense-suggestions');
+  if (!suggestions.length) {
+    el.innerHTML = '<div style="color:var(--text-secondary); font-size:13px">暂无建议</div>';
+    return;
+  }
+  el.innerHTML = suggestions.map(s => `
+    <div style="font-size:13px; color:var(--text); padding:8px 0; border-bottom:1px solid var(--border)">
+      ${s.message || s}
+    </div>
+  `).join('');
+}
+
+function renderEvents(logs) {
+  const el = document.getElementById('sense-events');
+  if (!logs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">◎</div>暂无事件</div>';
+    return;
+  }
+  el.innerHTML = logs.map(log => `
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border)">
+      <div style="width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:13px">${log.flow_id || log.subject || '事件'}</div>
+        <div style="font-size:11px; color:var(--text-secondary)">${formatTime(log.created_at)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── 录音功能 ──────────────────────────────────────────
+
+async function toggleRecording() {
+  const btn = document.getElementById('record-btn');
+  const isRecording = btn.classList.contains('recording');
+
+  if (isRecording) {
+    // 停止
+    btn.classList.remove('recording');
+    clearInterval(recordingTimer);
+    document.getElementById('record-status').textContent = '正在上传...';
+    document.getElementById('record-icon').innerHTML =
+      '<circle cx="12" cy="12" r="5" fill="var(--warn)" stroke="none"/><circle cx="12" cy="12" r="9"/>';
+
+    try {
+      if (window.Nervus) {
+        await window.Nervus.Recorder.stop();
+        document.getElementById('record-status').textContent = '已上传，正在转写...';
+      }
+    } catch (e) {
+      document.getElementById('record-status').textContent = '上传失败';
+    }
+
+    setTimeout(() => {
+      document.getElementById('record-status').textContent = '点击开始录音';
+      document.getElementById('record-timer').textContent = '00:00';
+      loadRecordHistory();
+    }, 2000);
+
+  } else {
+    // 开始
+    try {
+      if (window.Nervus) {
+        const perm = await window.Nervus.Recorder.requestPermission();
+        if (!perm.granted) {
+          document.getElementById('record-status').textContent = '需要麦克风权限';
+          return;
+        }
+        await window.Nervus.Recorder.start();
+      }
+    } catch (e) {}
+
+    btn.classList.add('recording');
+    document.getElementById('record-status').textContent = '录音中...';
+    document.getElementById('record-icon').innerHTML =
+      '<rect x="6" y="6" width="12" height="12" rx="2" fill="var(--warn)" stroke="none"/>';
+
+    recordingSeconds = 0;
+    recordingTimer = setInterval(() => {
+      recordingSeconds++;
+      const m = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+      const s = String(recordingSeconds % 60).padStart(2, '0');
+      document.getElementById('record-timer').textContent = `${m}:${s}`;
+    }, 1000);
+  }
+}
+
+async function loadRecordHistory() {
+  const el = document.getElementById('record-history');
+  try {
+    const data = await appApi(8002, '/meetings?limit=5');
+    const meetings = data.meetings || [];
+    if (!meetings.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">◎</div>暂无录音</div>';
+      return;
+    }
+    el.innerHTML = meetings.map(m => `
+      <div class="note-item">
+        <div class="note-item-title">${m.title || '未命名会议'}</div>
+        <div class="note-item-preview">${m.summary || m.transcript?.slice(0, 80) || '无摘要'}</div>
+        <div class="note-item-date">${formatTime(m.created_at)}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="color:var(--text-secondary); font-size:13px; text-align:center">加载失败</div>';
+  }
+}
+
+// ── 笔记功能 ──────────────────────────────────────────
+
+async function loadNotes() {
+  const el = document.getElementById('notes-list');
+  try {
+    const data = await appApi(8007, '/notes?limit=30');
+    const notes = data.notes || [];
+    if (!notes.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">◎</div>还没有笔记</div>';
+      return;
+    }
+    el.innerHTML = notes.map(n => `
+      <div class="note-item" onclick="openNote('${n.id}')">
+        <div class="note-item-title">${escHtml(n.title)}</div>
+        <div class="note-item-preview">${escHtml(n.content)}</div>
+        <div class="note-item-date">${formatTime(n.updated_at)}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="color:var(--text-secondary); font-size:13px; text-align:center">加载失败</div>';
+  }
+}
+
+function openNoteModal() {
+  document.getElementById('note-title-input').value = '';
+  document.getElementById('note-content-input').value = '';
+  document.getElementById('note-modal').classList.add('open');
+  setTimeout(() => document.getElementById('note-title-input').focus(), 300);
+}
+
+function closeNoteModal() {
+  document.getElementById('note-modal').classList.remove('open');
+}
+
+async function saveNote() {
+  const title = document.getElementById('note-title-input').value.trim();
+  const content = document.getElementById('note-content-input').value.trim();
+  if (!title || !content) return;
+  try {
+    await appApi(8007, '/notes', {
+      method: 'POST',
+      body: JSON.stringify({ title, content }),
+    });
+    closeNoteModal();
+    loadNotes();
+  } catch (e) {
+    alert('保存失败，请检查网络连接');
+  }
+}
+
+// ── 知识库搜索 ──────────────────────────────────────
+
+let kbSearchTimer = null;
+function onKbSearch(q) {
+  clearTimeout(kbSearchTimer);
+  if (!q.trim()) {
+    document.getElementById('kb-results').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">◎</div>输入关键词搜索</div>';
+    return;
+  }
+  kbSearchTimer = setTimeout(() => searchKb(q), 400);
+}
+
+async function searchKb(q) {
+  const el = document.getElementById('kb-results');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">◎</div>搜索中...</div>';
+  try {
+    const data = await appApi(8003, '/search', {
+      method: 'POST',
+      body: JSON.stringify({ query: q, limit: 15 }),
+    });
+    const items = data.results || data.items || [];
+    if (!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">◎</div>没有找到相关内容</div>';
+      return;
+    }
+    el.innerHTML = items.map(item => `
+      <div class="kb-item">
+        <div class="kb-item-title">
+          ${escHtml(item.title || '无标题')}
+          <span class="kb-type-badge">${item.item_type || item.type || '知识'}</span>
+        </div>
+        <div class="kb-item-meta">${escHtml((item.content || '').slice(0, 100))}</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="color:var(--text-secondary); font-size:13px; text-align:center">搜索失败</div>';
+  }
+}
+
+// ── 轮询刷新 ──────────────────────────────────────────
+
+function startPolling() {
+  loadSense();
+  pollInterval = setInterval(() => {
+    if (currentTab === 'sense') loadSense();
+  }, 15000);
+}
+
+function stopPolling() {
+  clearInterval(pollInterval);
+}
+
+// ── 工具函数 ──────────────────────────────────────────
+
+function formatTime(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return `${Math.floor(diff/60000)} 分钟前`;
+    if (diff < 86400000) return `${Math.floor(diff/3600000)} 小时前`;
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  } catch { return ''; }
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── 初始化流程 ────────────────────────────────────────
+
+async function initApp() {
+  // 尝试通过 Nervus Bridge 初始化
+  if (window.Nervus) {
+    try {
+      const state = await window.Nervus.init({
+        discoveryTimeout: 5000,
+        watchPhotos: true,
+        onNewPhoto: (data) => console.log('[Shell] 新照片:', data.filename),
+      });
+      setConnected(state.serverBase);
+    } catch (e) {
+      console.warn('[Shell] Bridge 初始化失败', e);
+      tryDirectConnect();
+    }
+
+    window.addEventListener('nervus:connected', (e) => setConnected(e.detail.serverBase));
+    window.addEventListener('nervus:disconnected', setDisconnected);
+
+  } else {
+    // 开发/Web 环境：直接连
+    tryDirectConnect();
+  }
+}
+
+async function tryDirectConnect() {
+  const candidates = [
+    'https://nervus.local',
+    'http://nervus.local:8090',
+    'http://localhost:8090',
+  ];
+  for (const base of candidates) {
+    try {
+      const resp = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
+      if (resp.ok) { setConnected(base); return; }
+    } catch {}
+  }
+  document.getElementById('conn-dot').className = 'error';
+  document.getElementById('conn-label').textContent = '未找到服务器';
+  document.getElementById('connecting-overlay').querySelector('.conn-hint').textContent =
+    '请确保已连接到 Nervus 所在的 Wi-Fi 网络';
+  document.getElementById('connecting-overlay').querySelector('.conn-spinner').style.display = 'none';
+}
+
+// 页面加载后启动
+document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('deviceready', initApp, { once: true });
+
+// 点 modal 背景关闭
+document.getElementById('note-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeNoteModal();
+});
+</script>
+</body>
+</html>

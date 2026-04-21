@@ -1,0 +1,236 @@
+[
+  {
+    "id": "photo-to-calorie",
+    "description": "照片 → 热量追踪：识别食物照片并自动记录热量",
+    "trigger": "media.photo.classified",
+    "condition": { "tags_contains": ["food"] },
+    "steps": [
+      {
+        "app": "calorie-tracker",
+        "action": "analyze_meal",
+        "input": { "photo_path": "$.payload.photo_path", "tags": "$.payload.tags" }
+      },
+      {
+        "context": "set",
+        "field": "physical.last_meal",
+        "value": "$.event.timestamp"
+      },
+      {
+        "emit": "health.calorie.meal_logged",
+        "payload": "$.result"
+      }
+    ]
+  },
+
+  {
+    "id": "photo-to-life-memory",
+    "description": "照片 → 人生记忆库：所有照片自动归档",
+    "trigger": "media.photo.classified",
+    "condition": {},
+    "steps": [
+      {
+        "app": "life-memory",
+        "action": "archive_moment",
+        "input": {
+          "photo_path": "$.payload.photo_path",
+          "tags": "$.payload.tags",
+          "timestamp": "$.event.timestamp"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "travel-photo-to-memory",
+    "description": "旅行照片 → 人生记忆库旅行线程",
+    "trigger": "media.photo.classified",
+    "condition": { "tags_contains": ["outdoor", "travel", "beach", "mountain", "city"] },
+    "steps": [
+      {
+        "emit": "memory.travel.moment_captured",
+        "payload": "$.payload"
+      },
+      {
+        "app": "life-memory",
+        "action": "add_to_trip",
+        "input": {
+          "photo_path": "$.payload.photo_path",
+          "location_type": "$.payload.location_type",
+          "timestamp": "$.event.timestamp"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "meeting-recording-processed",
+    "description": "会议录音 → 知识库：自动归档会议纪要",
+    "trigger": "meeting.recording.processed",
+    "condition": {},
+    "steps": [
+      {
+        "context": "set",
+        "field": "social.recent_meeting",
+        "value": "$.payload"
+      },
+      {
+        "app": "knowledge-base",
+        "action": "index_meeting",
+        "input": {
+          "meeting_id": "$.payload.meeting_id",
+          "transcript": "$.payload.transcript",
+          "summary": "$.payload.summary",
+          "timestamp": "$.payload.timestamp_range"
+        }
+      },
+      {
+        "emit": "knowledge.document.indexed",
+        "payload": { "type": "meeting", "source": "meeting-notes" }
+      }
+    ]
+  },
+
+  {
+    "id": "pdf-to-knowledge",
+    "description": "PDF → 知识库：文档解析完成后写入记忆图谱",
+    "trigger": "knowledge.document.indexed",
+    "condition": { "field_eq": { "type": "pdf" } },
+    "steps": [
+      {
+        "app": "knowledge-base",
+        "action": "embed_and_store",
+        "input": {
+          "item_id": "$.payload.item_id",
+          "content": "$.payload.content"
+        }
+      },
+      {
+        "notify": "global_popup",
+        "title": "Nervus 已分析新文档",
+        "body": "$.payload.title",
+        "metadata": "$.payload"
+      }
+    ]
+  },
+
+  {
+    "id": "note-created-to-knowledge",
+    "description": "笔记创建 → 知识库：自动索引个人笔记",
+    "trigger": "knowledge.note.created",
+    "condition": {},
+    "steps": [
+      {
+        "app": "knowledge-base",
+        "action": "embed_and_store",
+        "input": {
+          "type": "note",
+          "title": "$.payload.title",
+          "content": "$.payload.content"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "video-transcribed-to-knowledge",
+    "description": "视频转录 → 知识库",
+    "trigger": "knowledge.video.transcribed",
+    "condition": {},
+    "steps": [
+      {
+        "app": "knowledge-base",
+        "action": "embed_and_store",
+        "input": {
+          "type": "video",
+          "title": "$.payload.title",
+          "content": "$.payload.transcript"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "rss-fetched-to-knowledge",
+    "description": "RSS 文章 → 知识库",
+    "trigger": "knowledge.article.fetched",
+    "condition": {},
+    "steps": [
+      {
+        "app": "knowledge-base",
+        "action": "embed_and_store",
+        "input": {
+          "type": "article",
+          "title": "$.payload.title",
+          "content": "$.payload.content",
+          "source_url": "$.payload.url"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "user-state-to-calendar",
+    "description": "用户状态更新 → 日历建议：认知负荷高时推送日程调整建议",
+    "trigger": "context.user_state.updated",
+    "condition": { "field_eq": { "field": "cognitive.load" } },
+    "steps": [
+      {
+        "app": "calendar",
+        "action": "suggest_schedule",
+        "input": {
+          "cognitive_load": "$.payload.value"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "file-detected-global-popup",
+    "description": "新文件进入系统 → 触发全局弹窗预处理提示",
+    "trigger": "system.file.detected",
+    "condition": {},
+    "steps": [
+      {
+        "notify": "global_popup",
+        "title": "Nervus 检测到新文件",
+        "body": "Nervus 正在后台分析，完成后将通知您",
+        "metadata": "$.payload"
+      }
+    ]
+  },
+
+  {
+    "id": "calorie-budget-alert",
+    "description": "热量预算超出 → 提醒 App 创建当日提醒",
+    "trigger": "health.calorie.budget_alert",
+    "condition": {},
+    "steps": [
+      {
+        "app": "reminder",
+        "action": "create_reminder",
+        "input": {
+          "title": "今日热量已超出预算",
+          "message": "$.payload.message",
+          "remind_at": "$.event.timestamp",
+          "priority": "normal",
+          "repeat": "none"
+        }
+      }
+    ]
+  },
+
+  {
+    "id": "reminder-triggered-popup",
+    "description": "提醒触发 → 全局弹窗",
+    "trigger": "schedule.reminder.triggered",
+    "condition": {},
+    "steps": [
+      {
+        "notify": "global_popup",
+        "title": "$.payload.title",
+        "body": "$.payload.message",
+        "metadata": "$.payload"
+      }
+    ]
+  }
+]

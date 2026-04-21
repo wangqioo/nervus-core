@@ -1,0 +1,14 @@
+{
+  "id": "pdf-extractor",
+  "name": "PDF 提取",
+  "version": "1.0.0",
+  "description": "PDF 解析完成后发布到知识总线",
+  "subscribes": [],
+  "publishes": ["knowledge.document.indexed"],
+  "actions": [
+    { "name": "extract_pdf", "description": "提取 PDF 内容", "input": { "file_path": "string" }, "output": { "content": "string", "title": "string" } }
+  ],
+  "context_reads": [],
+  "context_writes": [],
+  "memory_writes": ["knowledge.knowledge_items"]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@nervus/sdk",
+  "version": "1.0.0",
+  "description": "Nervus 生态系统 TypeScript SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "nats": "^2.28.0",
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.0",
+    "pgvector": "^0.2.0",
+    "axios": "^1.7.7",
+    "fastify": "^4.28.0",
+    "@fastify/multipart": "^8.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.6.3",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.14",
+    "ts-jest": "^29.2.5"
+  }
+}

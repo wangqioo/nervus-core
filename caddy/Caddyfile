@@ -1,0 +1,96 @@
+# Caddyfile — Nervus 反向代理
+# 局域网 HTTPS，自动证书（mkcert 或自签）
+# 访问：https://nervus.local（需在路由器/hosts 配置 DNS）
+
+{
+    # 局域网内使用自签证书
+    local_certs
+    log {
+        level INFO
+    }
+}
+
+# ── 主域名入口 ──────────────────────────────────
+nervus.local {
+    # Arbor Core API
+    handle /api/* {
+        reverse_proxy nervus-arbor:8090
+    }
+
+    # WebSocket（实时状态推送）
+    handle /ws/* {
+        reverse_proxy nervus-arbor:8090 {
+            header_up Upgrade {http.upgrade}
+            header_up Connection "Upgrade"
+        }
+    }
+
+    # 默认路由到移动端 Shell 静态文件
+    handle {
+        root * /srv/mobile
+        try_files {path} /index.html
+        file_server
+    }
+}
+
+# ── 各 App 子域名 ──────────────────────────────
+calorie.nervus.local {
+    reverse_proxy nervus-app-calorie:8001
+}
+
+meeting.nervus.local {
+    reverse_proxy nervus-app-meeting:8002
+}
+
+knowledge.nervus.local {
+    reverse_proxy nervus-app-knowledge:8003
+}
+
+memory.nervus.local {
+    reverse_proxy nervus-app-life:8004
+}
+
+sense.nervus.local {
+    reverse_proxy nervus-app-sense:8005
+}
+
+photo.nervus.local {
+    reverse_proxy nervus-app-photo:8006
+}
+
+notes.nervus.local {
+    reverse_proxy nervus-app-notes:8007
+}
+
+pdf.nervus.local {
+    reverse_proxy nervus-app-pdf:8008
+}
+
+video.nervus.local {
+    reverse_proxy nervus-app-video:8009
+}
+
+rss.nervus.local {
+    reverse_proxy nervus-app-rss:8010
+}
+
+calendar.nervus.local {
+    reverse_proxy nervus-app-calendar:8011
+}
+
+reminder.nervus.local {
+    reverse_proxy nervus-app-reminder:8012
+}
+
+status.nervus.local {
+    reverse_proxy nervus-app-status-sense:8013
+}
+
+workflow.nervus.local {
+    reverse_proxy nervus-app-workflow:8014
+}
+
+# ── 基础设施监控 ──────────────────────────────
+nats.nervus.local {
+    reverse_proxy nervus-nats:8222
+}

@@ -1,0 +1,40 @@
+{
+  "id": "calendar",
+  "name": "日程管理",
+  "version": "1.0.0",
+  "description": "日程管理与感知页时间轴，根据认知负荷调整建议",
+  "subscribes": [
+    "context.user_state.updated",
+    "schedule.event.created",
+    "schedule.event.updated",
+    "schedule.event.reminder"
+  ],
+  "publishes": [
+    "schedule.event.created",
+    "schedule.event.updated",
+    "schedule.event.reminder"
+  ],
+  "actions": [
+    {
+      "name": "create_event",
+      "description": "创建日程事件",
+      "input": { "title": "string", "start_at": "string", "end_at": "string", "description": "string" },
+      "output": { "event_id": "string" }
+    },
+    {
+      "name": "get_today_schedule",
+      "description": "获取今日日程",
+      "input": {},
+      "output": { "events": "array" }
+    },
+    {
+      "name": "suggest_schedule",
+      "description": "根据认知负荷建议日程调整",
+      "input": { "cognitive_load": "string" },
+      "output": { "suggestions": "array" }
+    }
+  ],
+  "context_reads": ["cognitive.load", "temporal.day_type"],
+  "context_writes": ["temporal.current_schedule", "temporal.upcoming_events"],
+  "memory_writes": []
+}

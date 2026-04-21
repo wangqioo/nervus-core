@@ -1,0 +1,14 @@
+{
+  "id": "rss-reader",
+  "name": "RSS 订阅",
+  "version": "1.0.0",
+  "description": "定时拉取 RSS 文章并发布到知识总线",
+  "subscribes": [],
+  "publishes": ["knowledge.article.fetched"],
+  "actions": [
+    { "name": "fetch_feed", "description": "拉取 RSS 源", "input": { "url": "string" }, "output": { "articles": "array" } }
+  ],
+  "context_reads": [],
+  "context_writes": [],
+  "memory_writes": []
+}

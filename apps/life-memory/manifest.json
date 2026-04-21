@@ -1,0 +1,44 @@
+{
+  "id": "life-memory",
+  "name": "人生记忆库",
+  "version": "1.0.0",
+  "description": "把你的一生存进一个盒子。自动收集照片、旅行、会议，生成年度回忆录和旅行日志。",
+  "subscribes": [
+    { "subject": "media.photo.classified", "filter": {}, "handler": "/intake/photo_classified" },
+    { "subject": "memory.travel.moment_captured", "filter": {}, "handler": "/intake/travel_moment" },
+    { "subject": "meeting.recording.processed", "filter": {}, "handler": "/intake/meeting_recorded" }
+  ],
+  "publishes": [
+    "memory.annual.review_ready",
+    "memory.travel.trip_compiled"
+  ],
+  "actions": [
+    {
+      "name": "archive_moment",
+      "description": "归档一个生活时刻",
+      "input": { "photo_path": "string", "tags": "array", "timestamp": "string" },
+      "output": { "event_id": "string" }
+    },
+    {
+      "name": "add_to_trip",
+      "description": "将时刻加入旅行线程",
+      "input": { "photo_path": "string", "location_type": "string", "timestamp": "string" },
+      "output": { "trip_id": "string" }
+    },
+    {
+      "name": "generate_trip_log",
+      "description": "为指定旅行生成日志",
+      "input": { "trip_id": "string" },
+      "output": { "trip_log": "string" }
+    },
+    {
+      "name": "get_timeline",
+      "description": "获取时间线",
+      "input": { "start_date": "string", "end_date": "string", "limit": "number" },
+      "output": { "events": "array" }
+    }
+  ],
+  "context_reads": ["travel.is_traveling", "travel.current_trip"],
+  "context_writes": ["travel.is_traveling", "travel.current_trip"],
+  "memory_writes": ["life.life_events"]
+}
