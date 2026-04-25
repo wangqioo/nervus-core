@@ -72,6 +72,11 @@ nervus.local, https://150.158.146.192 {
         uri strip_prefix /api/workflow
         reverse_proxy nervus-app-workflow:8014
     }
+    @files path /api/files /api/files/*
+    handle @files {
+        uri strip_prefix /api/files
+        reverse_proxy nervus-app-files:8015
+    }
 
     # ── Arbor Core (catch-all for /api/*) ──
     handle /api/* {
@@ -203,6 +208,11 @@ nats.nervus.local {
     handle /api/workflow/* {
         uri strip_prefix /api/workflow
         reverse_proxy nervus-app-workflow:8014
+    }
+    @files8900 path /api/files /api/files/*
+    handle @files8900 {
+        uri strip_prefix /api/files
+        reverse_proxy nervus-app-files:8015
     }
     handle /api/* {
         uri strip_prefix /api

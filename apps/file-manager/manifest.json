@@ -1,0 +1,31 @@
+{
+  "id": "file-manager",
+  "name": "文件管理",
+  "version": "1.0.0",
+  "description": "文件传输中转站：上传文件、保存链接、AI 自动分析并语义搜索",
+  "subscribes": [],
+  "publishes": ["files.item.analyzed"],
+  "actions": [
+    {
+      "name": "upload_file",
+      "description": "上传文件并触发 AI 分析",
+      "input": { "file": "binary" },
+      "output": { "id": "string", "status": "string" }
+    },
+    {
+      "name": "save_link",
+      "description": "保存链接并提取摘要",
+      "input": { "url": "string" },
+      "output": { "id": "string", "status": "string" }
+    },
+    {
+      "name": "search",
+      "description": "语义搜索所有文件",
+      "input": { "query": "string" },
+      "output": { "results": "array" }
+    }
+  ],
+  "context_reads": [],
+  "context_writes": [],
+  "memory_writes": []
+}

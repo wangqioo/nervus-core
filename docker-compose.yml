@@ -666,10 +666,46 @@ services:
     volumes:
     - whisper-models:/models
     image: nervus-whisper:latest
+  app-file-manager:
+    build:
+      context: .
+      dockerfile: apps/file-manager/Dockerfile
+    container_name: nervus-app-files
+    depends_on:
+    - arbor-core
+    entrypoint: []
+    environment:
+      APP_PORT: 8015
+      ARBOR_URL: http://nervus-arbor:8090
+      DATA_DIR: /data/files
+      LLAMA_URL: http://nervus-llama:8080
+      MAX_FILE_SIZE_MB: 50
+      NATS_URL: nats://nervus-nats:4222
+      POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
+      REDIS_URL: redis://nervus-redis:6379
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8015/health
+      timeout: 10s
+    networks:
+      nervus-net: null
+    ports:
+    - 8015:8015
+    restart: unless-stopped
+    volumes:
+    - files-data:/data
+    image: nervus-app-file-manager:latest
 volumes:
   caddy-certs: null
   caddy-data: null
   calendar-data: null
+  files-data: null
   nats-data: null
   notes-data: null
   pdf-data: null

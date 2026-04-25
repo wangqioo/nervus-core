@@ -2161,136 +2161,38 @@ border-radius: <span class="cs">16px</span>;</div>
         <div class="fm-av">🗂</div>
         <div>
           <div class="fm-ttl">文件管理</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:1px">发送给自己的文件 · 链接 · 文字</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:1px" id="fm-stat">发送给自己的文件 · 链接 · 文字</div>
         </div>
       </div>
       <div class="fm-search-bar">
         <div class="fm-search-inner">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="var(--text3)" stroke-width="1.5"/><path d="M11 11L14 14" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <input placeholder="搜索文件、链接或文字…"/>
+          <input id="fm-search-inp" placeholder="AI 语义搜索…"/>
         </div>
       </div>
-      <div class="fm-feed">
-        <div class="fm-date-sep">4月16日</div>
-        <div class="fm-row">
-          <div>
-            <div class="fm-link-card">
-              <div class="fm-link-preview b">🐙</div>
-              <div class="fm-link-info">
-                <div class="fm-link-title">GitHub · edge-ai-assistant</div>
-                <div class="fm-link-url">github.com/wangqioo</div>
-              </div>
-            </div>
-            <div class="fm-time">16:08</div>
-          </div>
-        </div>
-
-        <div class="fm-date-sep">4月17日</div>
-        <div class="fm-row">
-          <div>
-            <div class="fm-file-card">
-              <div class="fm-file-ico" style="background:rgba(139,114,255,.15)">🖼</div>
-              <div class="fm-file-body">
-                <div class="fm-file-name">架构图_系统设计_v3.png</div>
-                <div class="fm-file-meta">1.8 MB · PNG 图片</div>
-              </div>
-              <button class="fm-file-open">↓</button>
-            </div>
-            <div class="fm-time">11:23</div>
-          </div>
-        </div>
-
-        <div class="fm-date-sep">4月18日</div>
-        <div class="fm-row">
-          <div>
-            <div class="fm-text-bubble">记得看这份会议纪要，整理了本周所有决议</div>
-            <div class="fm-time">09:05</div>
-          </div>
-        </div>
-        <div class="fm-row" style="margin-top:2px">
-          <div>
-            <div class="fm-file-card">
-              <div class="fm-file-ico" style="background:rgba(94,234,181,.15)">📝</div>
-              <div class="fm-file-body">
-                <div class="fm-file-name">会议纪要_2026-04-18.md</div>
-                <div class="fm-file-meta">24 KB · Markdown</div>
-              </div>
-              <button class="fm-file-open">↓</button>
-            </div>
-            <div class="fm-time">09:06</div>
-          </div>
-        </div>
-
-        <div class="fm-date-sep">昨天</div>
-        <div class="fm-row">
-          <div>
-            <div class="fm-file-card">
-              <div class="fm-file-ico" style="background:rgba(255,170,92,.15)">📑</div>
-              <div class="fm-file-body">
-                <div class="fm-file-name">竞品分析报告.xlsx</div>
-                <div class="fm-file-meta">890 KB · 表格</div>
-              </div>
-              <button class="fm-file-open">↓</button>
-            </div>
-            <div class="fm-time">14:05</div>
-          </div>
-        </div>
-        <div class="fm-row" style="margin-top:2px">
-          <div>
-            <div class="fm-link-card">
-              <div class="fm-link-preview a">📋</div>
-              <div class="fm-link-info">
-                <div class="fm-link-title">Notion · 2026年产品路线图</div>
-                <div class="fm-link-url">notion.so · 共享文档</div>
-              </div>
-            </div>
-            <div class="fm-time">16:20</div>
-          </div>
-        </div>
-        <div class="fm-row" style="margin-top:2px">
-          <div>
-            <div class="fm-file-card">
-              <div class="fm-file-ico" style="background:rgba(255,110,122,.15)">🎬</div>
-              <div class="fm-file-body">
-                <div class="fm-file-name">会议录像_2026Q1复盘.mp4</div>
-                <div class="fm-file-meta">128 MB · 视频</div>
-              </div>
-              <button class="fm-file-open">↓</button>
-            </div>
-            <div class="fm-time">18:44</div>
-          </div>
-        </div>
-
-        <div class="fm-date-sep">今天</div>
-        <div class="fm-row">
-          <div>
-            <div class="fm-img-card">
-              <div class="fm-img-inner a">🖼</div>
-              <div class="fm-img-lbl">UI设计稿_主页面.png · 4.1 MB</div>
-            </div>
-            <div class="fm-time">09:18</div>
-          </div>
-        </div>
-        <div class="fm-row" style="margin-top:2px">
-          <div>
-            <div class="fm-file-card">
-              <div class="fm-file-ico" style="background:rgba(255,110,122,.15)">📄</div>
-              <div class="fm-file-body">
-                <div class="fm-file-name">产品需求文档 v2.0.pdf</div>
-                <div class="fm-file-meta">2.3 MB · PDF 文档</div>
-              </div>
-              <button class="fm-file-open">↓</button>
-            </div>
-            <div class="fm-time">09:32</div>
-          </div>
-        </div>
+      <div class="fm-feed" id="fm-feed">
+        <div style="text-align:center;padding:64px 20px;color:var(--text3);font-size:13px">向右滑进入后加载</div>
       </div>
+      <input type="file" id="fmFileInput" style="display:none" multiple>
       <div class="fm-inp">
-        <button class="mic-btn" style="width:34px;height:34px;font-size:15px;flex-shrink:0">📷</button>
-        <button class="mic-btn" style="width:34px;height:34px;font-size:15px;flex-shrink:0">📎</button>
-        <button class="mic-btn" style="width:34px;height:34px;font-size:15px;flex-shrink:0">🔗</button>
-        <input class="fm-inp-field" placeholder="发送文字给自己…"/>
-        <button class="send-btn" style="width:34px;height:34px;flex-shrink:0" onclick="">↑</button>
+        <button class="mic-btn" style="width:34px;height:34px;font-size:15px;flex-shrink:0" onclick="fmPickFile()">📎</button>
+        <button class="mic-btn" style="width:34px;height:34px;font-size:15px;flex-shrink:0" onclick="fmAddLink()">🔗</button>
+        <input class="fm-inp-field" id="fm-text-inp" placeholder="发送文字给自己…" onkeydown="if(event.key==='Enter')fmSendText()"/>
+        <button class="send-btn" style="width:34px;height:34px;flex-shrink:0" onclick="fmSendText()">↑</button>
+      </div>
+      <!-- 文件详情浮层 -->
+      <div id="fm-detail" style="display:none;position:absolute;inset:0;background:var(--bg-blur);backdrop-filter:blur(24px);z-index:100;padding:70px 20px 20px;overflow-y:auto">
+        <button onclick="fmCloseDetail()" style="position:absolute;top:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;color:var(--text2);font-size:16px;cursor:pointer">×</button>
+        <div id="fd-ico" style="font-size:42px;text-align:center;margin-bottom:14px"></div>
+        <div id="fd-name" style="font-size:16px;font-weight:700;color:var(--text);text-align:center;word-break:break-all;margin-bottom:6px"></div>
+        <div id="fd-meta" style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:20px"></div>
+        <div id="fd-summary" style="font-size:14px;color:var(--text);line-height:1.7;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px"></div>
+        <div id="fd-keywords" style="font-size:12px;color:var(--accent);margin-bottom:20px;line-height:1.8"></div>
+        <div style="display:flex;gap:10px">
+          <button id="fd-dl" onclick="fmDownload()" style="flex:1;height:42px;background:var(--s2);border:1px solid var(--border2);border-radius:14px;color:var(--text);font-size:14px;cursor:pointer">↓ 下载</button>
+          <button id="fd-open" onclick="fmOpenUrl()" style="flex:1;height:42px;background:var(--accent);border:none;border-radius:14px;color:#fff;font-size:14px;cursor:pointer">打开链接</button>
+          <button onclick="fmDeleteCurrent()" style="width:42px;height:42px;background:rgba(255,110,122,.12);border:1px solid rgba(255,110,122,.3);border-radius:14px;color:var(--red);font-size:16px;cursor:pointer">🗑</button>
+        </div>
       </div>
     </div>
 
@@ -2405,6 +2307,7 @@ function nav(name) {
   const p = POS[name];
   panelEl.style.transform = `translate(${-p.x}px,${-p.y}px)`;
   current = name;
+  if(name === 'files') initFilesPanel();
 }
 
 // Swipe gestures
@@ -2949,6 +2852,214 @@ async function populateMeetingApp(){
 
 // Demo notification — disabled (was distracting)
 // setTimeout(()=>{if(current==='home')showNotif();},4000);
+
+// ── FILE MANAGER ─────────────────────────────────────────────────────
+const FM = '/api/files';
+const FM_ICO = {image:'🖼',video:'🎬',document:'📄',audio:'🎵',link:'🔗',text:'💬',other:'📦'};
+const FM_CLR = {image:'rgba(139,114,255,.15)',video:'rgba(255,110,122,.15)',document:'rgba(255,110,122,.15)',audio:'rgba(94,234,181,.15)',link:'rgba(255,170,92,.15)',text:'rgba(139,114,255,.15)',other:'rgba(255,255,255,.08)'};
+const FM_LBL = {image:'图片',video:'视频',document:'文档',audio:'音频',link:'链接',text:'文字',other:'文件'};
+let _fmFiles=[], _fmSse=null, _fmReady=false, _fmDetailId=null;
+
+function fmSize(b){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(0)+'KB';return(b/1048576).toFixed(1)+'MB';}
+function fmDateLbl(iso){
+  const d=new Date(iso),now=new Date();
+  const t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const t1=new Date(t0-86400000);
+  if(d>=t0)return'今天';if(d>=t1)return'昨天';
+  return`${d.getMonth()+1}月${d.getDate()}日`;
+}
+
+async function initFilesPanel(){
+  if(_fmReady)return;
+  _fmReady=true;
+  // Wire search
+  const si=document.getElementById('fm-search-inp');
+  if(si){
+    let _t=null;
+    si.addEventListener('input',()=>{clearTimeout(_t);_t=setTimeout(()=>fmLoad(si.value.trim()),400);});
+  }
+  // Wire file input
+  const fi=document.getElementById('fmFileInput');
+  if(fi)fi.addEventListener('change',fmUploadFiles);
+  await fmLoad();
+  fmConnectSse();
+}
+
+async function fmLoad(q=''){
+  const feed=document.getElementById('fm-feed');
+  if(!feed)return;
+  if(q){
+    feed.innerHTML='<div style="text-align:center;padding:32px 20px;color:var(--text3);font-size:13px">搜索中…</div>';
+    const data=await fetch(`${FM}/search?q=${encodeURIComponent(q)}`).then(r=>r.json()).catch(()=>null);
+    fmRenderSearch(data?.results||[]);
+    return;
+  }
+  feed.innerHTML='<div style="text-align:center;padding:32px 20px;color:var(--text3);font-size:13px">加载中…</div>';
+  const data=await fetch(`${FM}?limit=100`).then(r=>r.json()).catch(()=>[]);
+  _fmFiles=Array.isArray(data)?data:[];
+  fmRenderFeed(_fmFiles);
+  const stat=document.getElementById('fm-stat');
+  if(stat&&_fmFiles.length)stat.textContent=`共 ${_fmFiles.length} 项 · AI 自动分析`;
+}
+
+function fmRenderFeed(files){
+  const feed=document.getElementById('fm-feed');
+  if(!feed)return;
+  if(!files.length){feed.innerHTML='<div style="text-align:center;padding:64px 20px;color:var(--text3);font-size:13px">暂无内容<br>从下方上传文件或发送链接</div>';return;}
+  const groups={};
+  files.forEach(f=>{const lbl=fmDateLbl(f.created_at);(groups[lbl]=groups[lbl]||[]).push(f);});
+  let html='';
+  for(const[lbl,items]of Object.entries(groups)){
+    html+=`<div class="fm-date-sep">${esc(lbl)}</div>`;
+    items.forEach(f=>{html+=fmItemHtml(f);});
+  }
+  feed.innerHTML=html;
+}
+
+function fmItemHtml(f){
+  const ico=FM_ICO[f.type]||'📦', clr=FM_CLR[f.type]||'rgba(255,255,255,.08)';
+  const time=fmtT(f.created_at);
+  const pending=f.status==='pending'?'<span style="color:var(--text3);font-size:10px"> · 分析中</span>':'';
+  const click=`onclick="fmOpenDetail('${f.id}')"`;
+
+  if(f.type==='link'){
+    let domain='';try{domain=new URL(f.url||f.original_filename).hostname;}catch{}
+    const preview=f.og_image
+      ?`<img src="${FM}/image-proxy?url=${encodeURIComponent(f.og_image)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" onerror="this.outerHTML='${ico}'">`
+      :ico;
+    return`<div class="fm-row"><div><div class="fm-link-card" ${click} style="cursor:pointer">
+      <div class="fm-link-preview" style="background:${clr}">${preview}</div>
+      <div class="fm-link-info"><div class="fm-link-title">${esc(f.summary||f.original_filename)}</div><div class="fm-link-url">${esc(domain)}</div></div>
+    </div><div class="fm-time">${time}${pending}</div></div></div>`;
+  }
+
+  if(f.type==='text'){
+    return`<div class="fm-row"><div>
+      <div class="fm-text-bubble" ${click} style="cursor:pointer">${esc(f.summary||f.original_filename)}</div>
+      <div class="fm-time">${time}</div>
+    </div></div>`;
+  }
+
+  if(f.type==='image'){
+    return`<div class="fm-row"><div><div class="fm-img-card" ${click} style="cursor:pointer">
+      <div class="fm-img-inner" style="background:${clr}">${ico}</div>
+      <div class="fm-img-lbl">${esc(f.original_filename)} · ${fmSize(f.file_size)}</div>
+    </div><div class="fm-time">${time}${pending}</div></div></div>`;
+  }
+
+  return`<div class="fm-row"><div><div class="fm-file-card" ${click} style="cursor:pointer">
+    <div class="fm-file-ico" style="background:${clr}">${ico}</div>
+    <div class="fm-file-body"><div class="fm-file-name">${esc(f.original_filename)}</div>
+    <div class="fm-file-meta">${fmSize(f.file_size)}${f.file_size?' · ':''}${FM_LBL[f.type]||'文件'}</div></div>
+    <button class="fm-file-open" onclick="event.stopPropagation();fmDownload('${f.id}')">↓</button>
+  </div><div class="fm-time">${time}${pending}</div></div></div>`;
+}
+
+function fmRenderSearch(results){
+  const feed=document.getElementById('fm-feed');if(!feed)return;
+  if(!results.length){feed.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3);font-size:13px">没有匹配的文件</div>';return;}
+  feed.innerHTML=results.map(r=>{
+    const ico=FM_ICO[r.type]||'📦';
+    const stars='★'.repeat(Math.round((r.match_score||0)*5))+'☆'.repeat(5-Math.round((r.match_score||0)*5));
+    return`<div style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="fmOpenDetail('${r.id}')">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${ico}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.original_filename)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4">${esc(r.match_reason||'')}</div>
+        </div>
+        <span style="color:var(--orange);font-size:10px;letter-spacing:-.5px;flex-shrink:0">${stars}</span>
+      </div></div>`;
+  }).join('');
+}
+
+function fmConnectSse(){
+  if(_fmSse)_fmSse.close();
+  _fmSse=new EventSource(`${FM}/events`);
+  _fmSse.onmessage=e=>{
+    try{
+      const d=JSON.parse(e.data);
+      if(!d.id)return;
+      const idx=_fmFiles.findIndex(f=>f.id===d.id);
+      if(idx>=0)_fmFiles[idx]={..._fmFiles[idx],...d};
+      else _fmFiles.unshift(d);
+      fmRenderFeed(_fmFiles);
+      const stat=document.getElementById('fm-stat');
+      if(stat)stat.textContent=`共 ${_fmFiles.length} 项 · AI 自动分析`;
+      // 如果详情面板打开且正是这条，刷新详情
+      if(_fmDetailId===d.id)fmShowDetail(d);
+    }catch{}
+  };
+  _fmSse.onerror=()=>{
+    // EventSource 自动重连，记录一次重试时间戳即可
+    _fmSse=null;
+    setTimeout(fmConnectSse,3000);
+  };
+}
+
+function fmPickFile(){document.getElementById('fmFileInput')?.click();}
+async function fmUploadFiles(e){
+  const files=e.target.files;if(!files.length)return;
+  for(const f of files){const fd=new FormData();fd.append('file',f);await fetch(`${FM}/upload`,{method:'POST',body:fd});}
+  e.target.value='';
+  await fmLoad();
+}
+async function fmAddLink(){
+  const url=prompt('请输入链接地址（http/https）：');
+  if(!url||!url.startsWith('http'))return;
+  const fd=new FormData();fd.append('url',url);
+  await fetch(`${FM}/upload`,{method:'POST',body:fd});
+  await fmLoad();
+}
+async function fmSendText(){
+  const inp=document.getElementById('fm-text-inp');
+  const text=(inp?.value||'').trim();if(!text)return;
+  const fd=new FormData();fd.append('text',text);
+  await fetch(`${FM}/upload`,{method:'POST',body:fd});
+  inp.value='';
+  await fmLoad();
+}
+function fmDownload(id){window.open(`${FM}/${id||_fmDetailId}/download`,'_blank');}
+function fmOpenUrl(){const f=_fmFiles.find(x=>x.id===_fmDetailId);if(f?.url)window.open(f.url,'_blank');}
+async function fmDeleteCurrent(){
+  if(!_fmDetailId||!confirm('确认删除此文件？'))return;
+  await fetch(`${FM}/${_fmDetailId}`,{method:'DELETE'});
+  _fmFiles=_fmFiles.filter(f=>f.id!==_fmDetailId);
+  fmCloseDetail();fmRenderFeed(_fmFiles);
+}
+
+async function fmOpenDetail(id){
+  _fmDetailId=id;
+  let f=_fmFiles.find(x=>x.id===id);
+  // 若不在本地缓存（搜索结果超出加载范围），从 API 取
+  if(!f){
+    const detail=document.getElementById('fm-detail');
+    if(detail)detail.style.display='block';
+    document.getElementById('fd-summary').textContent='加载中…';
+    f=await fetch(`${FM}/${id}`).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(!f){document.getElementById('fd-summary').textContent='加载失败';return;}
+    // 加入本地缓存
+    _fmFiles.push(f);
+  }
+  fmShowDetail(f);
+}
+
+function fmShowDetail(f){
+  const d=document.getElementById('fm-detail');if(!d)return;
+  document.getElementById('fd-ico').textContent=FM_ICO[f.type]||'📦';
+  document.getElementById('fd-name').textContent=f.original_filename;
+  document.getElementById('fd-meta').textContent=`${FM_LBL[f.type]||'文件'}${f.file_size?' · '+fmSize(f.file_size):''} · ${fmDateLbl(f.created_at)}`;
+  document.getElementById('fd-summary').textContent=f.summary||f.description||(f.status==='pending'?'AI 分析中，请稍候…':'（暂无摘要）');
+  document.getElementById('fd-keywords').textContent=(f.keywords||[]).map(k=>`#${k}`).join('  ')||'';
+  document.getElementById('fd-dl').style.display=f.type==='link'?'none':'';
+  document.getElementById('fd-open').style.display=f.type==='link'?'':'none';
+  d.style.display='block';
+}
+
+function fmCloseDetail(){
+  const d=document.getElementById('fm-detail');if(d)d.style.display='none';
+  _fmDetailId=null;
+}
 
 // ── KICK OFF ────────────────────────────────────────────────────────
 initRealData();
