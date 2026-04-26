@@ -1,15 +1,8 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).parent.parent.parent
-load_dotenv(BASE_DIR / ".env")
-DATA_DIR = BASE_DIR / "data" / "files"
+DATA_DIR = Path(os.getenv("DATA_DIR", "/app/data/files"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-GLM_API_KEY = os.getenv("GLM_API_KEY", "")
-GLM_MODEL = os.getenv("GLM_MODEL", "glm-4-flash")
-GLM_VISION_MODEL = os.getenv("GLM_VISION_MODEL", "glm-4v-flash")
 
 # LinkBox API — 填入后自动接管公众号 / 通用链接解析
 LINKBOX_API_URL = os.getenv("LINKBOX_API_URL", "")   # e.g. https://your-linkbox.com/api/parse

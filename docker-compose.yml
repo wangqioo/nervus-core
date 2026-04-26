@@ -642,14 +642,19 @@ services:
     build:
       context: .
       dockerfile: apps/file-manager/Dockerfile
+    image: nervus-app-file-manager:latest
     container_name: nervus-app-files
     entrypoint: []
+    depends_on:
+      - arbor-core
     environment:
-      GLM_API_KEY: ${GLM_API_KEY:-}
-      GLM_MODEL: ${GLM_MODEL:-glm-4-flash}
-      GLM_VISION_MODEL: ${GLM_VISION_MODEL:-glm-4v-flash}
+      APP_PORT: "8015"
+      APP_INTERNAL_URL: "http://nervus-app-files:8015"
+      NATS_URL: nats://nervus-nats:4222
+      REDIS_URL: redis://nervus-redis:6379
+      ARBOR_URL: http://nervus-arbor:8090
+      LLAMA_URL: http://nervus-llama:8080
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-50}
-      CORS_ORIGINS: http://localhost:5173,http://nervus.local,http://localhost:8900
       LINKBOX_API_URL: ${LINKBOX_API_URL:-}
       LINKBOX_API_KEY: ${LINKBOX_API_KEY:-}
     healthcheck:

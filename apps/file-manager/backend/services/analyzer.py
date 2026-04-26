@@ -1,22 +1,50 @@
 import base64
 import json
+import os
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from zhipuai import ZhipuAI
+import httpx
 
 from backend.models.file import FileSummary, FileType, FileStatus
 from backend.services.storage import get_file_absolute_path, save_meta
 from backend.services.url_classifier import (
     classify_url, fetch_bilibili_summary, fetch_wechat_summary, fetch_generic_summary
 )
-from backend.utils.config import GLM_API_KEY, GLM_MODEL, GLM_VISION_MODEL
+
+_ARBOR_URL = os.getenv("ARBOR_URL", "http://nervus-arbor:8090")
+_LLAMA_URL = os.getenv("LLAMA_URL", "http://nervus-llama:8080")
 
 
-def _client() -> ZhipuAI:
-    return ZhipuAI(api_key=GLM_API_KEY)
+def _chat(messages: list, system: str = "", max_tokens: int = 512) -> str:
+    msgs = []
+    if system:
+        msgs.append({"role": "system", "content": system})
+    msgs.extend(messages)
+    with httpx.Client(timeout=30) as client:
+        resp = client.post(
+            f"{_ARBOR_URL}/models/chat",
+            json={"model": "qwen3.5", "messages": msgs, "max_tokens": max_tokens},
+        )
+        resp.raise_for_status()
+        return resp.json().get("content", "")
+
+
+def _vision_chat(messages: list, max_tokens: int = 512) -> str:
+    with httpx.Client(timeout=60) as client:
+        resp = client.post(
+            f"{_LLAMA_URL}/v1/chat/completions",
+            json={
+                "model": "qwen3.5",
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "chat_template_kwargs": {"enable_thinking": False},
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
 
 
 def _extract_json(text: str) -> dict:
@@ -122,31 +150,24 @@ def _analyze_image(meta: FileSummary) -> dict:
     with open(file_path, "rb") as f:
         image_data = base64.standard_b64encode(f.read()).decode("utf-8")
 
-    client = _client()
-    response = client.chat.completions.create(
-        model=GLM_VISION_MODEL,
-        messages=[{
-            "role": "user",
-            "content": [
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{media_type};base64,{image_data}"},
-                },
-                {
-                    "type": "text",
-                    "text": (
-                        "请分析这张图片，生成JSON格式简介：\n"
-                        "{\n"
-                        '  "summary": "一句话描述（20字内）",\n'
-                        '  "description": "详细描述（100字内）",\n'
-                        '  "keywords": ["关键词1", "关键词2", "关键词3"]\n'
-                        "}\n只输出JSON，不要其他内容。"
-                    ),
-                },
-            ],
-        }],
-    )
-    return _extract_json(response.choices[0].message.content)
+    content = _vision_chat([{
+        "role": "user",
+        "content": [
+            {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{image_data}"}},
+            {
+                "type": "text",
+                "text": (
+                    "请分析这张图片，生成JSON格式简介：\n"
+                    "{\n"
+                    '  "summary": "一句话描述（20字内）",\n'
+                    '  "description": "详细描述（100字内）",\n'
+                    '  "keywords": ["关键词1", "关键词2", "关键词3"]\n'
+                    "}\n只输出JSON，不要其他内容。"
+                ),
+            },
+        ],
+    }])
+    return _extract_json(content)
 
 
 def _analyze_document(meta: FileSummary) -> dict:
@@ -155,27 +176,23 @@ def _analyze_document(meta: FileSummary) -> dict:
     if not text:
         text = f"文件名：{meta.original_filename}"
 
-    client = _client()
-    response = client.chat.completions.create(
-        model=GLM_MODEL,
-        messages=[
-            {"role": "system", "content": "你是一个文档分析助手，专注于提取核心信息并生成结构化简介。"},
-            {
-                "role": "user",
-                "content": (
-                    f"请分析以下文档内容，生成JSON格式简介：\n\n{text}\n\n"
-                    "要求生成JSON格式：\n"
-                    "{\n"
-                    '  "summary": "一句话描述文档主题（20字内）",\n'
-                    '  "description": "文档核心内容概述（100字内）",\n'
-                    '  "keywords": ["关键词1", "关键词2", "关键词3"],\n'
-                    '  "highlights": ["亮点1", "亮点2"]\n'
-                    "}\n只输出JSON，不要其他内容。"
-                ),
-            },
-        ],
+    content = _chat(
+        messages=[{
+            "role": "user",
+            "content": (
+                f"请分析以下文档内容，生成JSON格式简介：\n\n{text}\n\n"
+                "要求生成JSON格式：\n"
+                "{\n"
+                '  "summary": "一句话描述文档主题（20字内）",\n'
+                '  "description": "文档核心内容概述（100字内）",\n'
+                '  "keywords": ["关键词1", "关键词2", "关键词3"],\n'
+                '  "highlights": ["亮点1", "亮点2"]\n'
+                "}\n只输出JSON，不要其他内容。"
+            ),
+        }],
+        system="你是一个文档分析助手，专注于提取核心信息并生成结构化简介。",
     )
-    return _extract_json(response.choices[0].message.content)
+    return _extract_json(content)
 
 
 def _analyze_video(meta: FileSummary) -> dict:
@@ -197,20 +214,16 @@ def _analyze_audio(meta: FileSummary) -> dict:
 
 
 def _analyze_other(meta: FileSummary) -> dict:
-    client = _client()
-    response = client.chat.completions.create(
-        model=GLM_MODEL,
-        messages=[{
-            "role": "user",
-            "content": (
-                f"根据文件名生成简介，文件名：{meta.original_filename}\n"
-                "生成JSON：\n"
-                '{"summary": "一句话简介", "description": "描述", "keywords": ["词1"], "highlights": []}\n'
-                "只输出JSON。"
-            ),
-        }],
-    )
-    return _extract_json(response.choices[0].message.content)
+    content = _chat([{
+        "role": "user",
+        "content": (
+            f"根据文件名生成简介，文件名：{meta.original_filename}\n"
+            "生成JSON：\n"
+            '{"summary": "一句话简介", "description": "描述", "keywords": ["词1"], "highlights": []}\n'
+            "只输出JSON。"
+        ),
+    }])
+    return _extract_json(content)
 
 
 async def _analyze_link(url: str) -> dict:
@@ -235,40 +248,36 @@ async def search_files(query: str, files: list[FileSummary]) -> list[dict]:
     if not file_list_text:
         return []
 
-    client = _client()
-    response = client.chat.completions.create(
-        model=GLM_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "你是一个严格的文件搜索助手。"
-                    "只返回与搜索词有明确、直接关联的文件——文件的摘要或关键词中必须有清晰的证据。"
-                    "如果某文件仅是模糊相关或你无法确定，不要包含它。"
-                    "宁可少返回，不可滥返回。没有确信相关的文件时返回空数组。"
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"文件列表：\n{file_list_text}\n\n"
-                    f"搜索词：{query}\n\n"
-                    "规则：\n"
-                    "1. 只返回摘要/关键词中有直接证据的文件\n"
-                    "2. match_score 代表确信度（0~1），低于 0.6 的不要返回\n"
-                    "3. match_reason 引用文件摘要/关键词中的具体内容说明为何匹配\n"
-                    "4. 最多返回5个，没有匹配则 results 为空数组\n\n"
-                    "返回JSON（只输出JSON）：\n"
-                    '{"results": [{"id": "文件id", "match_score": 0.85, "match_reason": "摘要中提到..."}]}'
-                ),
-            },
-        ],
+    content = _chat(
+        messages=[{
+            "role": "user",
+            "content": (
+                f"文件列表：\n{file_list_text}\n\n"
+                f"搜索词：{query}\n\n"
+                "规则：\n"
+                "1. 只返回摘要/关键词中有直接证据的文件\n"
+                "2. match_score 代表确信度（0~1），低于 0.6 的不要返回\n"
+                "3. match_reason 引用文件摘要/关键词中的具体内容说明为何匹配\n"
+                "4. 最多返回5个，没有匹配则 results 为空数组\n\n"
+                "返回JSON（只输出JSON）：\n"
+                '{"results": [{"id": "文件id", "match_score": 0.85, "match_reason": "摘要中提到..."}]}'
+            ),
+        }],
+        system=(
+            "你是一个严格的文件搜索助手。"
+            "只返回与搜索词有明确、直接关联的文件——文件的摘要或关键词中必须有清晰的证据。"
+            "如果某文件仅是模糊相关或你无法确定，不要包含它。"
+            "宁可少返回，不可滥返回。没有确信相关的文件时返回空数组。"
+        ),
+        max_tokens=1024,
     )
-    data = _extract_json(response.choices[0].message.content)
+    data = _extract_json(content)
     results = data.get("results", [])
+
     def _score(r):
         try:
             return float(r.get("match_score") or 0)
         except (TypeError, ValueError):
             return 0.0
+
     return [r for r in results if _score(r) >= 0.6]

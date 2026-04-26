@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "本地文件上传、管理与 AI 分析，支持图片识别和 Linkbox 同步",
   "icon": "🗂️",
-  "route": "/files/",
+  "route": "/api/file-manager",
   "service": {
     "container": "nervus-app-files",
     "internal_url": "http://nervus-app-files:8015",
