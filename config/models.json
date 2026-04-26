@@ -6,6 +6,7 @@
       "id": "qwen3.5",
       "name": "Qwen 3.5 4B（本地）",
       "provider": "llama.cpp",
+      "llm_model_name": "qwen",
       "vision": true,
       "context_length": 4096,
       "auto_extra": {

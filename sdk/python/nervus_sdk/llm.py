@@ -26,7 +26,7 @@ class LLMClient:
         result = await client.vision("/path/to/image.jpg", "识别食物并估算热量")
     """
 
-    def __init__(self, base_url: str, timeout: float = 30.0):
+    def __init__(self, base_url: str, timeout: float = 180.0):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self._client = httpx.AsyncClient(timeout=timeout)
@@ -46,7 +46,7 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
 
         body: dict[str, Any] = {
-            "model": "qwen3.5",
+            "model": "qwen",
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -130,7 +130,7 @@ class LLMClient:
         }]
 
         body = {
-            "model": "qwen3.5",
+            "model": "qwen",
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -170,7 +170,7 @@ class LLMClient:
         """生成文本向量嵌入（用于 Memory Graph 语义检索）"""
         response = await self._client.post(
             f"{self.base_url}/v1/embeddings",
-            json={"model": "qwen3.5", "input": text},
+            json={"model": "qwen", "input": text},
         )
         response.raise_for_status()
         data = response.json()

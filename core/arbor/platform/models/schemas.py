@@ -30,6 +30,8 @@ class ModelConfig(BaseModel):
     vision: bool = False
     context_length: int = 4096
     auto_extra: dict[str, Any] = Field(default_factory=dict)
+    # actual model name sent to llama.cpp / cloud API; defaults to id if empty
+    llm_model_name: str = ""
 
 
 class ChatMessage(BaseModel):

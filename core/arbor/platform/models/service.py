@@ -113,8 +113,9 @@ class ModelService:
     # ── provider implementations ──────────────────────────────────────────────
 
     async def _chat_local(self, req: ChatRequest, cfg: ModelConfig) -> ChatResponse:
+        model_name = cfg.llm_model_name or cfg.id
         payload: dict[str, Any] = {
-            "model": cfg.id,
+            "model": model_name,
             "messages": [m.model_dump() for m in req.messages],
             "max_tokens": req.max_tokens,
             "temperature": req.temperature,
@@ -125,7 +126,7 @@ class ModelService:
         payload.update(merged_extra)
 
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            async with httpx.AsyncClient(timeout=300.0) as client:
                 resp = await client.post(f"{self._llm_url}/v1/chat/completions", json=payload)
                 resp.raise_for_status()
                 data = resp.json()
