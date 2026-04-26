@@ -1,112 +1,113 @@
-# Nervus iOS Shell
+# WebShell
 
-Capacitor 6 原生壳，包装 Nervus 感知页并提供 4 个原生插件。
+一个 iOS 原生壳应用，让你把任意 HTML/Web 应用打包进手机，像原生 App 一样使用。
+
+基于 [Capacitor](https://capacitorjs.com/) 构建，Web 层可通过 Bridge 调用相机、定位、文件系统、推送通知等原生能力。
+
+## 功能
+
+- **应用管理**：卡片式主页，支持添加、删除任意 Web 应用
+- **本地应用**：本地 HTML 文件直接内嵌运行（无跨域限制）
+- **外部 URL**：远程网址用独立 WKWebView 打开
+- **相册同步**：自动读取本地相册，状态实时显示
+- **原生 Bridge**：Web 页面可调用以下原生能力：
+  - 相机拍照 / 相册选图
+  - GPS 定位（单次 + 持续监听）
+  - 推送通知
+  - 文件读写（Documents 目录）
+  - 触感反馈（Haptics）
+  - 麦克风
 
 ## 项目结构
 
 ```
-ios-shell/
-├── capacitor.config.ts       # Capacitor 配置
-├── package.json
-├── src/
-│   ├── index.html            # 移动端 UI（感知/录音/笔记/知识库四标签）
-│   └── js/
-│       └── nervus-bridge.js  # JS 桥接层，封装所有原生插件调用
-└── ios/App/App/Plugins/
-    ├── PhotoLibraryPlugin/   # 相册监听，自动上传新照片
-    ├── AudioRecorderPlugin/  # 会议录音（16kHz 单声道）
-    ├── NervusDiscoveryPlugin/ # Bonjour/mDNS 局域网服务发现
-    └── BackgroundSyncPlugin/ # 后台拉取 + 本地通知
+webshell-app/
+├── www/                        # Web 层（打包进 App 的页面）
+│   ├── index.html              # 主页（应用卡片列表）
+│   ├── bridge.js               # Native ↔ Web 通信桥
+│   ├── webshell-client.js      # 客户端工具库
+│   └── apps/
+│       └── demo/index.html     # 内置 Demo 应用
+├── ios/                        # Xcode / Capacitor iOS 工程
+│   └── App/
+│       └── App/
+│           ├── AppDelegate.swift       # 原生入口
+│           └── PhotoSyncManager.swift  # 相册同步模块
+├── capacitor.config.json       # Capacitor 配置
+├── deploy.sh                   # 构建部署脚本
+└── package.json
 ```
 
-## 快速开始
+## 开发
 
-### 前置条件
+**环境要求**
 
-- macOS + Xcode 15+
-- Node.js 20+
-- Nervus 边缘设备（Jetson Orin Nano）在同一 Wi-Fi 网络
+- Node.js 18+
+- Xcode 15+
+- CocoaPods
 
-### 安装
+**安装依赖**
 
 ```bash
-cd nervus/ios-shell
 npm install
-npx cap sync ios
-npx cap open ios
 ```
 
-### Xcode 配置
-
-1. **Info.plist**：将 `ios/App/App/Plugins/Info.plist.additions.xml` 中的所有 key 合并到 `ios/App/App/Info.plist`
-
-2. **Capabilities** — 在 Signing & Capabilities 标签页开启：
-   - Background Modes:
-     - [x] Background fetch
-     - [x] Background processing
-     - [x] Audio, AirPlay, and Picture in Picture
-     - [x] Remote notifications
-
-3. **Bundle ID**：改为你的 Apple Developer Team 下的 ID（默认 `ai.nervus.app`）
-
-4. **签名**：选择你的 Development Team
-
-### 构建 & 运行
+**同步 Web 资源到 iOS 工程**
 
 ```bash
-# 同步 Web 资产到 iOS 项目
 npx cap sync ios
+```
 
-# 用 Xcode 打开并运行到设备
+**用 Xcode 打开**
+
+```bash
 npx cap open ios
 ```
 
-## 原生插件说明
+然后连接真机或选择模拟器，点击运行即可。
 
-### PhotoLibraryPlugin
+## 添加自己的 Web 应用
 
-监听 `PHPhotoLibrary` 变化，有新照片时自动：
-1. 编码为 base64
-2. 通过 `nervus-bridge.js` 的 `Nervus.Photos._uploadPhoto()` 上传到 `photo-scanner:8006/upload`
-3. photo-scanner 分类后发布 `media.photo.classified` 事件到 NATS 总线
+**方式一：本地 HTML**
 
-### AudioRecorderPlugin
+将 HTML 文件放入 `www/apps/<你的应用>/index.html`，在主页点击"添加应用"填写路径 `apps/<你的应用>/index.html`。
 
-- 使用 `AVAudioRecorder` 录制 16kHz 单声道 M4A
-- 录音结束后自动上传到 `meeting-notes:8002/record`
-- meeting-notes 调用 Whisper 转写，自动生成会议纪要
+**方式二：远程 URL**
 
-### NervusDiscoveryPlugin
+在主页点击"添加应用"，直接填写 `https://` 开头的网址即可。
 
-- 优先直连 `nervus.local`（Caddy mDNS 配置）
-- 回退到 `_nervus._tcp` Bonjour 服务浏览
-- 发现后通过 `serviceChange` 事件持续通知 JS 层
+## Bridge API
 
-### BackgroundSyncPlugin
-
-- 注册 `BGAppRefreshTask`（Task ID: `ai.nervus.background-sync`）
-- 系统唤醒时调用 `pollAndNotify()` 拉取 Arbor Core 未读通知
-- 使用 `UNUserNotificationCenter` 推送本地通知
-
-## Nervus Bridge JS API
+在嵌入的 Web 应用中，可直接调用 `window.Bridge` 访问原生能力：
 
 ```js
-// 初始化（自动发现服务器 + 开始监听相册）
-await Nervus.init({ watchPhotos: true });
+// 从相册选图，返回图片 URL
+const url = await Bridge.pickPhoto();
 
-// 手动调用 API
-await Nervus.api('/notify/notifications');
+// 拍照
+const url = await Bridge.takePhoto();
 
-// 录音
-await Nervus.Recorder.start();
-const result = await Nervus.Recorder.stop(); // 自动上传
+// 获取当前位置
+const { lat, lng, accuracy } = await Bridge.getLocation();
 
-// 相册
-const perm = await Nervus.Photos.requestPermission();
-await Nervus.Photos.startWatching(photo => console.log(photo));
+// 保存 / 读取文件
+await Bridge.saveFile('data.json', JSON.stringify(data));
+const raw = await Bridge.readFile('data.json');
 
-// 通知
-await Nervus.Background.scheduleNotification({
-  title: '提醒', body: '内容', delayMs: 0
+// 触感反馈
+Bridge.vibrate();
+
+// 判断是否运行在原生容器中
+if (Bridge.isNative()) { ... }
+```
+
+跨域远程页面也可通过 `postMessage` 调用 Bridge：
+
+```js
+// 在远程页面中
+const id = Math.random().toString();
+window.parent.postMessage({ id, method: 'getLocation', args: [] }, '*');
+window.addEventListener('message', (e) => {
+  if (e.data.id === id) console.log(e.data.result);
 });
 ```

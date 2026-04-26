@@ -1,27 +1,28 @@
 {
-  "name": "nervus-ios-shell",
+  "name": "webshell-app",
   "version": "1.0.0",
-  "description": "Nervus iOS Shell — 本地 AI 神经系统移动端",
-  "private": true,
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "build": "echo 'Static web shell — no build step needed'",
-    "sync": "npx cap sync ios",
-    "open": "npx cap open ios",
-    "run:ios": "npx cap run ios"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/device": "^6.0.0",
-    "@capacitor/haptics": "^6.0.0",
-    "@capacitor/local-notifications": "^6.0.0",
-    "@capacitor/network": "^6.0.0",
-    "@capacitor/push-notifications": "^6.0.0",
-    "@capacitor/splash-screen": "^6.0.0",
-    "@capacitor/status-bar": "^6.0.0"
+    "@capacitor/camera": "^8.0.2",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.3.0",
+    "@capacitor/local-notifications": "^8.0.2",
+    "@capacitor/push-notifications": "^8.0.3",
+    "@capacitor/status-bar": "^8.0.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.0.0",
-    "@capacitor/ios": "^6.0.0"
+    "typescript": "^6.0.2"
   }
 }
