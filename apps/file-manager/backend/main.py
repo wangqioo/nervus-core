@@ -48,8 +48,9 @@ async def get_state():
 
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
+    # Mount at /files/assets to match the vite base build output path
     nervus._api.mount(
-        "/assets",
+        "/files/assets",
         StaticFiles(directory=str(FRONTEND_DIST / "assets")),
         name="assets",
     )
