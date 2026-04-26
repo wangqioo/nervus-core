@@ -9,9 +9,7 @@
       "llm_model_name": "qwen",
       "vision": true,
       "context_length": 4096,
-      "auto_extra": {
-        "chat_template_kwargs": { "enable_thinking": false }
-      }
+      "auto_extra": {}
     }
   ],
   "cloud": [

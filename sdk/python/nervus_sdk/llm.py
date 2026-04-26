@@ -43,7 +43,7 @@ class LLMClient:
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
+        messages.append({"role": "user", "content": f"/no_think {prompt}"})
 
         body: dict[str, Any] = {
             "model": "qwen",
@@ -51,7 +51,6 @@ class LLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": False,
-            "chat_template_kwargs": {"enable_thinking": False},
         }
         if json_mode:
             body["response_format"] = {"type": "json_object"}
@@ -125,7 +124,7 @@ class LLMClient:
             "role": "user",
             "content": [
                 image_content,
-                {"type": "text", "text": prompt},
+                {"type": "text", "text": f"/no_think {prompt}"},
             ]
         }]
 
@@ -135,7 +134,6 @@ class LLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": False,
-            "chat_template_kwargs": {"enable_thinking": False},
         }
 
         response = await self._client.post(

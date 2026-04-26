@@ -114,14 +114,14 @@ class ModelService:
 
     async def _chat_local(self, req: ChatRequest, cfg: ModelConfig) -> ChatResponse:
         model_name = cfg.llm_model_name or cfg.id
+        messages = _inject_no_think([m.model_dump() for m in req.messages])
         payload: dict[str, Any] = {
             "model": model_name,
-            "messages": [m.model_dump() for m in req.messages],
+            "messages": messages,
             "max_tokens": req.max_tokens,
             "temperature": req.temperature,
             "stream": False,
         }
-        # merge model auto_extra first, then request extra (request wins)
         merged_extra = {**cfg.auto_extra, **req.extra}
         payload.update(merged_extra)
 
@@ -171,6 +171,26 @@ class ModelService:
             return ChatResponse(model=cfg.id, provider=cfg.provider, content="", error=str(exc))
 
         return _parse_openai_response(data, cfg)
+
+
+def _inject_no_think(messages: list[dict]) -> list[dict]:
+    """Prepend /no_think to the last user message to suppress Qwen thinking mode."""
+    result = list(messages)
+    for i in range(len(result) - 1, -1, -1):
+        if result[i].get("role") == "user":
+            content = result[i]["content"]
+            if isinstance(content, str):
+                result[i] = {**result[i], "content": f"/no_think {content}"}
+            elif isinstance(content, list):
+                # find first text part and prepend
+                new_content = list(content)
+                for j, part in enumerate(new_content):
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        new_content[j] = {**part, "text": f"/no_think {part['text']}"}
+                        break
+                result[i] = {**result[i], "content": new_content}
+            break
+    return result
 
 
 def _parse_openai_response(data: dict, cfg: ModelConfig) -> ChatResponse:
