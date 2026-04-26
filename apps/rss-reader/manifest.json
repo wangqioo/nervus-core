@@ -1,14 +1,24 @@
 {
+  "schema_version": "0.1",
   "id": "rss-reader",
   "name": "RSS 订阅",
-  "version": "1.0.0",
+  "type": "nervus",
+  "version": "0.1.0",
   "description": "定时拉取 RSS 文章并发布到知识总线",
-  "subscribes": [],
-  "publishes": ["knowledge.article.fetched"],
-  "actions": [
-    { "name": "fetch_feed", "description": "拉取 RSS 源", "input": { "url": "string" }, "output": { "articles": "array" } }
-  ],
-  "context_reads": [],
-  "context_writes": [],
-  "memory_writes": []
+  "icon": "📰",
+  "route": "/rss/",
+  "service": {
+    "container": "nervus-app-rss",
+    "internal_url": "http://nervus-app-rss:8010",
+    "port": 8010
+  },
+  "capabilities": {
+    "actions": [
+      {"name": "fetch_feed", "description": "拉取 RSS 源"}
+    ],
+    "consumes": [],
+    "emits": ["knowledge.article.fetched"],
+    "models": [],
+    "writes": []
+  }
 }

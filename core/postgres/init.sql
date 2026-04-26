@@ -138,6 +138,20 @@ CREATE TRIGGER trg_knowledge_items_updated
     BEFORE UPDATE ON knowledge_items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+-- ── 平台事件表 ───────────────────────────────
+-- 记录从 NATS 总线流过的所有事件，用于回溯和审计
+CREATE TABLE IF NOT EXISTS platform_events (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    subject     TEXT NOT NULL,
+    payload     JSONB DEFAULT '{}',
+    source_app  TEXT NOT NULL DEFAULT 'system',
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_platform_events_subject ON platform_events (subject);
+CREATE INDEX IF NOT EXISTS idx_platform_events_created ON platform_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_platform_events_source  ON platform_events (source_app);
+
 -- ── 初始化完成标记 ────────────────────────────
 INSERT INTO app_registry (app_id, name, version, description, manifest, endpoint_url, status)
 VALUES (

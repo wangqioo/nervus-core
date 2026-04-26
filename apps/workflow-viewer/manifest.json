@@ -1,25 +1,25 @@
 {
+  "schema_version": "0.1",
   "id": "workflow-viewer",
   "name": "流程可视化",
-  "version": "1.0.0",
+  "type": "nervus",
+  "version": "0.1.0",
   "description": "可视化 Arbor Core 的 Flow 配置和实时执行日志，辅助调试和监控",
-  "subscribes": [],
-  "publishes": [],
-  "actions": [
-    {
-      "name": "get_flows",
-      "description": "获取所有 Flow 配置",
-      "input": {},
-      "output": { "flows": "array" }
-    },
-    {
-      "name": "get_logs",
-      "description": "获取执行日志",
-      "input": { "limit": "number", "flow_id": "string" },
-      "output": { "logs": "array" }
-    }
-  ],
-  "context_reads": [],
-  "context_writes": [],
-  "memory_writes": []
+  "icon": "🔍",
+  "route": "/workflow/",
+  "service": {
+    "container": "nervus-app-workflow",
+    "internal_url": "http://nervus-app-workflow:8014",
+    "port": 8014
+  },
+  "capabilities": {
+    "actions": [
+      {"name": "get_flows", "description": "获取所有 Flow 配置"},
+      {"name": "get_logs", "description": "获取执行日志"}
+    ],
+    "consumes": [],
+    "emits": [],
+    "models": [],
+    "writes": []
+  }
 }

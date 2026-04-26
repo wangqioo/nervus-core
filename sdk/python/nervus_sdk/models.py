@@ -1,57 +1,52 @@
-"""
-Nervus SDK 核心数据模型
-"""
-
 from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from typing import Any, Callable, Awaitable
+
 from pydantic import BaseModel, Field
 
 
 class Event(BaseModel):
-    """Synapse Bus 标准化事件"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    subject: str                        # NATS 主题，如 media.photo.classified
-    payload: dict[str, Any] = {}       # 事件数据
-    source_app: str = ""               # 发布者 App ID
+    subject: str
+    payload: dict[str, Any] = {}
+    source_app: str = ""
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    correlation_id: str | None = None  # 关联事件 ID（用于追踪跨 App 流程）
+    correlation_id: str | None = None
 
 
-class SubscribeConfig(BaseModel):
-    """事件订阅配置"""
-    subject: str                        # NATS 主题（支持通配符 * 和 >）
-    filter: dict[str, Any] = {}        # 过滤条件
-    handler: str = ""                  # NSI /intake 路由路径
+class AppService(BaseModel):
+    container: str = ""
+    internal_url: str = ""
+    port: int | None = None
 
 
-class ActionSpec(BaseModel):
-    """App 能力声明"""
-    name: str
-    description: str = ""
-    input: dict[str, str] = {}
-    output: dict[str, str] = {}
+class AppCapabilities(BaseModel):
+    actions: list[dict[str, Any]] = Field(default_factory=list)
+    consumes: list[str] = Field(default_factory=list)
+    emits: list[str] = Field(default_factory=list)
+    models: list[str] = Field(default_factory=list)
+    writes: list[str] = Field(default_factory=list)
 
 
-class Manifest(BaseModel):
-    """NSI App 能力声明（manifest.json）"""
+class AppManifest(BaseModel):
+    schema_version: str = "0.1"
     id: str
     name: str
-    version: str = "1.0.0"
+    type: str = "nervus"
+    version: str = "0.1.0"
     description: str = ""
-    subscribes: list[SubscribeConfig] = []
-    publishes: list[str] = []
-    actions: list[ActionSpec] = []
-    context_reads: list[str] = []
-    context_writes: list[str] = []
-    memory_writes: list[str] = []
+    icon: str = "🧩"
+    route: str = ""
+    service: AppService = Field(default_factory=AppService)
+    capabilities: AppCapabilities = Field(default_factory=AppCapabilities)
 
 
 class AppConfig(BaseModel):
-    """App 运行时配置（从环境变量读取）"""
     app_id: str
     port: int = 8000
+    internal_url: str = ""
     nats_url: str = "nats://localhost:4222"
     redis_url: str = "redis://localhost:6379"
     postgres_url: str = "postgresql://nervus:nervus_secret@localhost:5432/nervus"
@@ -62,9 +57,12 @@ class AppConfig(BaseModel):
     @classmethod
     def from_env(cls, app_id: str) -> "AppConfig":
         import os
+        port = int(os.getenv("APP_PORT", "8000"))
+        internal_url = os.getenv("APP_INTERNAL_URL", f"http://{app_id}:{port}")
         return cls(
             app_id=app_id,
-            port=int(os.getenv("APP_PORT", "8000")),
+            port=port,
+            internal_url=internal_url,
             nats_url=os.getenv("NATS_URL", "nats://localhost:4222"),
             redis_url=os.getenv("REDIS_URL", "redis://localhost:6379"),
             postgres_url=os.getenv("POSTGRES_URL", "postgresql://nervus:nervus_secret@localhost:5432/nervus"),
@@ -74,5 +72,5 @@ class AppConfig(BaseModel):
         )
 
 
-# 类型别名
+# type alias kept for compatibility within SDK
 EventHandler = Callable[[Event], Awaitable[Any]]

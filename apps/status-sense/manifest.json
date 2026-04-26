@@ -1,34 +1,30 @@
 {
+  "schema_version": "0.1",
   "id": "status-sense",
   "name": "状态感知仪",
-  "version": "1.0.0",
-  "description": "多信号融合的认知负荷推断，将原始 Context 数据计算为 low/medium/high 三级状态",
-  "subscribes": [
-    "health.calorie.meal_logged",
-    "meeting.recording.processed",
-    "media.photo.classified",
-    "context.user_state.updated"
-  ],
-  "publishes": ["context.user_state.updated"],
-  "actions": [
-    {
-      "name": "compute_load",
-      "description": "立即重新计算认知负荷并写入 Context",
-      "input": {},
-      "output": { "load": "string", "score": "number", "signals": "object" }
-    },
-    {
-      "name": "get_history",
-      "description": "获取认知负荷历史曲线",
-      "input": { "hours": "number" },
-      "output": { "history": "array" }
-    }
-  ],
-  "context_reads": [
-    "physical.activity", "physical.last_meal", "physical.calorie_remaining",
-    "cognitive.focus_duration", "social.recent_meeting",
-    "temporal.day_type", "temporal.current_hour"
-  ],
-  "context_writes": ["cognitive.load", "cognitive.load_score", "cognitive.load_updated_at"],
-  "memory_writes": []
+  "type": "nervus",
+  "version": "0.1.0",
+  "description": "多信号融合的认知负荷推断，计算 low/medium/high 三级状态",
+  "icon": "🧠",
+  "route": "/status-sense/",
+  "service": {
+    "container": "nervus-app-status-sense",
+    "internal_url": "http://nervus-app-status-sense:8013",
+    "port": 8013
+  },
+  "capabilities": {
+    "actions": [
+      {"name": "compute_load", "description": "立即重新计算认知负荷"},
+      {"name": "get_history", "description": "获取认知负荷历史曲线"}
+    ],
+    "consumes": [
+      "health.calorie.meal_logged",
+      "meeting.recording.processed",
+      "media.photo.classified",
+      "context.user_state.updated"
+    ],
+    "emits": ["context.user_state.updated"],
+    "models": [],
+    "writes": []
+  }
 }

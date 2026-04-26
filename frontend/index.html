@@ -681,6 +681,8 @@ body{position:fixed;inset:0;background:var(--bg);font-family:'PingFang SC','Outf
 .agrid.editing .adel{display:flex}
 @keyframes wiggle{from{transform:rotate(-1.5deg) scale(.96)}to{transform:rotate(1.5deg) scale(.96)}}
 .agrid.editing .aitem:not(.aitem-add){animation:wiggle .28s ease-in-out infinite alternate}
+.aitem-dim .aico{opacity:.4}
+.aitem-dim .aname{color:var(--text3)}
 
 /* ── App modal ── */
 .app-modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:350;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s}
@@ -1625,50 +1627,33 @@ let _selEmoji = EMOJI_LIST[0];
 function _loadApps() { try { return JSON.parse(localStorage.getItem(APPS_KEY)) ?? []; } catch { return []; } }
 function _saveApps(apps) { localStorage.setItem(APPS_KEY, JSON.stringify(apps)); }
 
-function _seedApps() {
+async function _ensureSeed() {
   if (localStorage.getItem(APPS_KEY)) return;
-  const seed = [
-    {id:'s1', type:'external', name:'会议纪要', url:'https://150.158.146.192:6105', icon:'🎙', color:'linear-gradient(135deg,rgba(255,100,120,.25),rgba(200,60,80,.1))'},
-    {id:'s2', type:'external', name:'PDF 提取', url:'http://150.158.146.192:6121',  icon:'📄', color:'linear-gradient(135deg,rgba(80,220,180,.25),rgba(40,170,140,.1))'},
-    {id:'s3', type:'external', name:'视频转录', url:'http://150.158.146.192:6124',  icon:'🎬', color:'linear-gradient(135deg,rgba(255,100,180,.25),rgba(200,60,140,.1))'},
-    {id:'s4', type:'external', name:'热量管理', url:'http://150.158.146.192:6125',  icon:'🔥', color:'linear-gradient(135deg,rgba(255,110,70,.25),rgba(220,70,40,.1))'},
-    {id:'s5', type:'external', name:'隧道',     url:'http://150.158.146.192:6128',  icon:'🌐', color:'linear-gradient(135deg,rgba(80,160,255,.25),rgba(40,110,220,.1))'},
-    {id:'s6', type:'external', name:'MBTI',     url:'http://150.158.146.192:6133',  icon:'✨', color:'linear-gradient(135deg,rgba(180,130,255,.25),rgba(130,90,220,.1))'},
-    {id:'s7', type:'external', name:'澜',       url:'https://150.158.146.192:6132', icon:'🌊', color:'linear-gradient(135deg,rgba(94,234,181,.25),rgba(40,170,140,.1))'},
-    {id:'s8', type:'external', name:'Gemma4',   url:'http://150.158.146.192:6134',  icon:'🤖', color:'linear-gradient(135deg,rgba(139,114,255,.25),rgba(107,82,240,.1))'},
-    {id:'s9', type:'external', name:'待办提醒', url:'http://150.158.146.192:6135',  icon:'📋', color:'linear-gradient(135deg,rgba(255,170,92,.25),rgba(220,120,30,.1))'},
-    {id:'s10',type:'external', name:'相册扫描', url:'http://150.158.146.192:6143',  icon:'📸', color:'linear-gradient(135deg,rgba(150,120,255,.25),rgba(100,80,210,.1))'},
-    {id:'s11',type:'external', name:'密码本',   url:'http://150.158.146.192:6155',  icon:'🔐', color:'linear-gradient(135deg,rgba(255,160,70,.25),rgba(220,120,40,.1))'},
-  ];
-  _saveApps(seed);
+  try {
+    const res = await fetch('/api/config/public');
+    const cfg = await res.json();
+    const seed = (cfg.external_apps || []).map(a => ({...a, type: 'external'}));
+    _saveApps(seed);
+  } catch {
+    _saveApps([]);
+  }
 }
-_seedApps();
 
-const NERVUS_APPS = [
-  {id:'n-calorie', name:'热量管理', path:'/api/calorie/', icon:'🔥', color:'linear-gradient(135deg,rgba(255,110,70,.25),rgba(220,70,40,.1))'},
-  {id:'n-meeting', name:'会议纪要', path:'/api/meeting/', icon:'🎙', color:'linear-gradient(135deg,rgba(255,100,120,.25),rgba(200,60,80,.1))'},
-  {id:'n-knowledge', name:'知识库', path:'/api/knowledge/', icon:'📚', color:'linear-gradient(135deg,rgba(139,114,255,.25),rgba(107,82,240,.1))'},
-  {id:'n-memory', name:'生活记忆', path:'/api/life/', icon:'🧠', color:'linear-gradient(135deg,rgba(180,130,255,.25),rgba(130,90,220,.1))'},
-  {id:'n-sense', name:'感知', path:'/api/sense/', icon:'🧬', color:'linear-gradient(135deg,rgba(94,234,181,.25),rgba(40,170,140,.1))'},
-  {id:'n-photo', name:'相册扫描', path:'/api/photo/', icon:'📸', color:'linear-gradient(135deg,rgba(150,120,255,.25),rgba(100,80,210,.1))'},
-  {id:'n-notes', name:'个人笔记', path:'/api/notes/', icon:'📝', color:'linear-gradient(135deg,rgba(80,160,255,.25),rgba(40,110,220,.1))'},
-  {id:'n-pdf', name:'PDF 提取', path:'/api/pdf/', icon:'📄', color:'linear-gradient(135deg,rgba(80,220,180,.25),rgba(40,170,140,.1))'},
-  {id:'n-video', name:'视频转录', path:'/api/video/', icon:'🎬', color:'linear-gradient(135deg,rgba(255,100,180,.25),rgba(200,60,140,.1))'},
-  {id:'n-rss', name:'RSS', path:'/api/rss/', icon:'📰', color:'linear-gradient(135deg,rgba(255,170,92,.25),rgba(220,120,30,.1))'},
-  {id:'n-calendar', name:'日历', path:'/api/calendar/', icon:'📅', color:'linear-gradient(135deg,rgba(80,200,255,.25),rgba(40,160,220,.1))'},
-  {id:'n-reminder', name:'提醒', path:'/api/reminder/', icon:'🔔', color:'linear-gradient(135deg,rgba(255,215,0,.22),rgba(200,165,0,.1))'},
-  {id:'n-status', name:'系统状态', path:'/api/status-sense/', icon:'📊', color:'linear-gradient(135deg,rgba(180,255,100,.2),rgba(120,200,40,.08))'},
-  {id:'n-workflow', name:'工作流', path:'/api/workflow/', icon:'🧩', color:'linear-gradient(135deg,rgba(139,114,255,.25),rgba(107,82,240,.1))'},
-];
+function _appColor(id) {
+  const h = [...(id || '')].reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) | 0, 0);
+  return ICON_COLORS[Math.abs(h) % ICON_COLORS.length];
+}
 
 function renderAppItem(app, canDelete) {
   const item = document.createElement('div');
-  item.className = 'aitem';
-  item.innerHTML = `${canDelete ? `<button class="adel" onclick="deleteApp('${app.id}',event)">✕</button>` : ''}<div class="aico" style="background:${app.color}">${app.icon}</div><span class="aname">${app.name}</span>`;
+  const color = app.color || _appColor(app.id);
+  const dim = app.status && app.status !== 'online' ? ' aitem-dim' : '';
+  item.className = 'aitem' + dim;
+  item.innerHTML = `${canDelete ? `<button class="adel" onclick="deleteApp('${app.id}',event)">✕</button>` : ''}<div class="aico" style="background:${color}">${app.icon || '🧩'}</div><span class="aname">${app.name}</span>`;
   item.addEventListener('click', () => {
     if (editMode) return;
     if (app.url) openWebApp(app.name, app.url);
-    else showAppPlaceholder(app.name);
+    else showAppPlaceholder(app.name, app.status);
   });
   let _pt;
   if (canDelete) {
@@ -1679,14 +1664,29 @@ function renderAppItem(app, canDelete) {
   return item;
 }
 
-function renderAppGrid() {
+async function renderAppGrid() {
+  await _ensureSeed();
   const nervusGrid = document.getElementById('nervusGrid');
   const externalGrid = document.getElementById('externalGrid');
-  const apps = _loadApps().map(app => ({...app, type: app.type || 'external'}));
   nervusGrid.innerHTML = '';
   externalGrid.innerHTML = '';
-  NERVUS_APPS.forEach(app => nervusGrid.appendChild(renderAppItem(app, false)));
-  apps.filter(app => app.type === 'external').forEach(app => externalGrid.appendChild(renderAppItem(app, true)));
+
+  let nervusApps = [];
+  try {
+    const res = await fetch('/api/apps');
+    const data = await res.json();
+    nervusApps = (data.apps || []).filter(a => a.type === 'nervus');
+  } catch {}
+
+  if (nervusApps.length === 0) {
+    nervusGrid.innerHTML = '<div class="apps-empty">暂无已注册的原生应用</div>';
+  } else {
+    nervusApps.forEach(app => nervusGrid.appendChild(renderAppItem(app, false)));
+  }
+
+  const externalApps = _loadApps().filter(a => (a.type || 'external') === 'external');
+  externalApps.forEach(app => externalGrid.appendChild(renderAppItem(app, true)));
+
   const addItem = document.createElement('div');
   addItem.className = 'aitem aitem-add';
   addItem.innerHTML = `<div class="aico-add">＋</div><span class="aname">添加</span>`;
@@ -1700,9 +1700,13 @@ function openWebApp(name, url) {
   document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('open'));
   document.getElementById('app-webview').classList.add('open');
 }
-function showAppPlaceholder(name) {
-  document.querySelector('#notif .notif-t').textContent = name + ' 是 Nervus 原生应用';
-  document.querySelector('#notif .notif-d').textContent = '当前是后端服务入口，前端详情页后续接入';
+function showAppPlaceholder(name, status) {
+  const statusText = {
+    online: '在线运行中', offline: '当前不在线',
+    degraded: '运行异常', not_configured: '未配置', disabled: '已停用',
+  }[status] || '后端服务';
+  document.querySelector('#notif .notif-t').textContent = name;
+  document.querySelector('#notif .notif-d').textContent = statusText + ' · 前端详情页后续接入';
   showNotif();
 }
 
@@ -1791,7 +1795,7 @@ document.querySelectorAll('.chip').forEach(c=>{
   });
 });
 
-// Chat send — real LLM via /api/llm proxy
+// Chat send — via Model Platform /api/models/chat
 async function sendMsg(){
   const inp=document.getElementById('chatInp');
   const val=inp.value.trim();
@@ -1805,13 +1809,11 @@ async function sendMsg(){
   msgs.appendChild(ud);
   inp.value='';
   msgs.scrollTop=msgs.scrollHeight;
-  // Thinking bubble
   const rd=document.createElement('div');
   rd.className='msg ai';
   rd.innerHTML=`<div class="bubble" id="llmBubble" style="color:var(--text3)">思考中…</div><span class="msg-t">${t}</span>`;
   msgs.appendChild(rd);
   msgs.scrollTop=msgs.scrollHeight;
-  // Context from sense
   let ctx='你是 Nervus 个人 AI 助手，运行在边缘设备上，请用中文简洁回答（不超过4句话）。';
   if(window._senseData){
     const cog=window._senseData.cognitive||{};
@@ -1819,14 +1821,23 @@ async function sendMsg(){
     ctx+=`当前用户：认知负荷${cog.label||'正常'}，睡眠${phys.sleep_last_night||0}h，热量剩余${phys.calorie_remaining||0}kcal。`;
   }
   try{
-    const res=await fetch('/api/llm/v1/chat/completions',{
+    const res=await fetch('/api/models/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'qwen3.5',messages:[{role:'system',content:ctx},{role:'user',content:val}],
-        max_tokens:256,temperature:0.5,chat_template_kwargs:{enable_thinking:false},stream:false})
+      body:JSON.stringify({
+        model:'qwen3.5',
+        messages:[{role:'system',content:ctx},{role:'user',content:val}],
+        max_tokens:256,
+        temperature:0.5,
+        extra:{chat_template_kwargs:{enable_thinking:false}}
+      })
     });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      document.getElementById('llmBubble').textContent=err.detail||'模型暂时不可用，请稍后重试。';
+      return;
+    }
     const data=await res.json();
-    const reply=data?.choices?.[0]?.message?.content||'抱歉，暂时无法回答。';
-    document.getElementById('llmBubble').textContent=reply;
+    document.getElementById('llmBubble').textContent=data.content||'抱歉，暂时无法回答。';
     document.getElementById('llmBubble').style.color='';
   }catch(e){
     document.getElementById('llmBubble').textContent='网络异常，请稍后重试。';

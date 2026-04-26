@@ -1,32 +1,29 @@
 {
+  "schema_version": "0.1",
   "id": "photo-scanner",
-  "name": "相册扫描器",
-  "version": "1.0.0",
+  "name": "相册扫描",
+  "type": "nervus",
+  "version": "0.1.0",
   "description": "定时扫描新照片，AI 分类并发布到 Synapse Bus",
-  "subscribes": [],
-  "publishes": [
-    "media.photo.classified",
-    "media.photo.batch_processed",
-    "meeting.whiteboard.detected"
-  ],
-  "actions": [
-    {
-      "name": "classify_photo",
-      "description": "对单张照片进行 AI 分类",
-      "input": { "photo_path": "string" },
-      "output": { "tags": "array", "scene": "string", "objects": "array" }
-    },
-    {
-      "name": "scan_batch",
-      "description": "批量扫描指定目录下的新照片",
-      "input": { "directory": "string", "since": "string" },
-      "output": { "processed": "number", "classified": "array" }
-    }
-  ],
-  "context_reads": [
-    "travel.is_traveling",
-    "social.recent_meeting"
-  ],
-  "context_writes": [],
-  "memory_writes": []
+  "icon": "📸",
+  "route": "/photo/",
+  "service": {
+    "container": "nervus-app-photo",
+    "internal_url": "http://nervus-app-photo:8006",
+    "port": 8006
+  },
+  "capabilities": {
+    "actions": [
+      {"name": "classify_photo", "description": "对单张照片进行 AI 分类"},
+      {"name": "scan_batch", "description": "批量扫描指定目录下的新照片"}
+    ],
+    "consumes": [],
+    "emits": [
+      "media.photo.classified",
+      "media.photo.batch_processed",
+      "meeting.whiteboard.detected"
+    ],
+    "models": [],
+    "writes": []
+  }
 }
