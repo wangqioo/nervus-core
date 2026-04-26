@@ -53,6 +53,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     model: str
     content: str
+    reasoning_content: str = ""
     provider: str = ""
     usage: dict[str, Any] = Field(default_factory=dict)
     error: str = ""

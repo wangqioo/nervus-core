@@ -175,7 +175,7 @@ class ModelService:
         except Exception as exc:
             return ChatResponse(model=cfg.id, provider=cfg.provider, content="", error=str(exc))
 
-        return _parse_openai_response(data, cfg)
+        return _parse_llama_response(data, cfg)
 
     async def _chat_cloud(self, req: ChatRequest, cfg: ModelConfig) -> ChatResponse:
         api_key = await self.get_api_key(cfg.id)
@@ -230,6 +230,20 @@ def _inject_no_think(messages: list[dict]) -> list[dict]:
                 result[i] = {**result[i], "content": new_content}
             break
     return result
+
+
+def _parse_llama_response(data: dict, cfg: ModelConfig) -> ChatResponse:
+    """Parse llama.cpp chat completions response, extracting reasoning_content too."""
+    try:
+        msg = data["choices"][0]["message"]
+        content = msg.get("content") or ""
+        reasoning = msg.get("reasoning_content") or ""
+        usage = data.get("usage", {})
+    except (KeyError, IndexError) as exc:
+        return ChatResponse(model=cfg.id, provider=cfg.provider, content="",
+                            error=f"unexpected response shape: {exc}")
+    return ChatResponse(model=cfg.id, provider=cfg.provider, content=content,
+                        reasoning_content=reasoning, usage=usage)
 
 
 def _parse_openai_response(data: dict, cfg: ModelConfig) -> ChatResponse:
