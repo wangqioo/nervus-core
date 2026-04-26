@@ -98,7 +98,7 @@ nervus.local, https://150.158.146.192 {
 
     # Static frontend
     handle {
-        root * /srv/mobile
+        root * /srv/frontend
         try_files {path} /index.html
         file_server
     }
@@ -234,7 +234,7 @@ nats.nervus.local {
         }
     }
     handle {
-        root * /srv/mobile
+        root * /srv/frontend
         try_files {path} /index.html
         file_server
     }

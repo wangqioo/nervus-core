@@ -6,11 +6,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PGDATA=/var/lib/postgresql/data/pgdata
 
-COPY postgres/docker-entrypoint.sh /docker-entrypoint.sh
+COPY core/postgres/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 RUN mkdir -p /docker-entrypoint-initdb.d
-COPY postgres/init.sql /docker-entrypoint-initdb.d/init.sql
+COPY core/postgres/init.sql /docker-entrypoint-initdb.d/init.sql
 
 EXPOSE 5432
 

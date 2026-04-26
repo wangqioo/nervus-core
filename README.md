@@ -94,7 +94,7 @@ docker compose up -d
 
 以 frp 为例，在有公网 IP 的服务器上运行 frps，在 Jetson 上运行 frpc，将本地 443 端口映射到公网某端口即可。
 
-配置完成后将公网地址填入 `ios-shell/capacitor.config.json` 的 `server.url`（见下节）。
+配置完成后将公网地址填入 `ios/capacitor.config.json` 的 `server.url`（见下节）。
 
 ---
 
@@ -110,7 +110,7 @@ docker compose up -d
 
 **① 修改服务器地址**
 
-打开 `ios-shell/capacitor.config.json`，将 `server.url` 改为你自己的 Nervus 地址：
+打开 `ios/capacitor.config.json`，将 `server.url` 改为你自己的 Nervus 地址：
 
 ```json
 {
@@ -157,14 +157,14 @@ open ios/App/App.xcodeproj
 
 ## 5. 日常更新前端
 
-前端是单文件 `mobile/index.html`，修改后直接 scp 到主机，**无需重启 Docker，无需重新编译 Xcode**。
+前端是单文件 `frontend/index.html`，修改后直接 scp 到主机，**无需重启 Docker，无需重新编译 Xcode**。
 
 ```bash
 # 局域网直连
-scp mobile/index.html <用户名>@<主机IP>:/home/<用户名>/nervus/mobile/index.html
+scp frontend/index.html <用户名>@<主机IP>:/home/<用户名>/nervus/frontend/index.html
 
 # 或通过 SSH 隧道
-scp -P <端口> mobile/index.html <用户名>@<公网IP>:/home/<用户名>/nervus/mobile/index.html
+scp -P <端口> frontend/index.html <用户名>@<公网IP>:/home/<用户名>/nervus/frontend/index.html
 ```
 
 上传后刷新手机 App（完全关闭再重开）即可看到最新版本。
@@ -175,10 +175,10 @@ scp -P <端口> mobile/index.html <用户名>@<公网IP>:/home/<用户名>/nervu
 
 ```
 nervus/
-├── mobile/
+├── frontend/
 │   └── index.html              # 全部前端 UI（单文件 SPA）
 │
-├── ios-shell/                  # iOS 原生壳子（Capacitor）
+├── ios/                        # iOS 原生壳子（Capacitor）
 │   ├── capacitor.config.json   # ← 改这里配置服务器地址
 │   └── ios/App/App/
 │       ├── MainViewController.swift   # SSL 自签名证书绕过 + 状态栏主题
@@ -201,16 +201,23 @@ nervus/
 │   ├── workflow-viewer/
 │   └── calendar/
 │
-├── caddy/Caddyfile              # 反向代理（HTTPS 443 + HTTP 8900）
-├── docker-compose.yml           # 一键启动所有服务
-├── postgres/                    # 数据库初始化
-├── redis/                       # 缓存配置
-├── nats/                        # 消息队列
-├── whisper/                     # 本地语音转文字
-├── nervus-sdk/                  # Python SDK
-├── nervus-sdk-ts/               # TypeScript SDK
+├── core/                       # 基础设施
+│   ├── arbor/                  # Arbor Core 事件路由（端口 8090）
+│   ├── caddy/                  # 反向代理（HTTPS 443 + HTTP 8900）
+│   ├── nats/                   # 消息队列
+│   ├── postgres/               # 数据库初始化
+│   ├── redis/                  # 缓存配置
+│   └── whisper/                # 本地语音转文字（端口 8081）
+│
+├── sdk/
+│   ├── python/                 # Python SDK（各 App 使用）
+│   └── typescript/             # TypeScript SDK
+│
+├── docker-compose.yml          # 一键启动所有服务
 └── docs/
-    └── porting-guide.md         # 新 App 接入手册
+    ├── porting-guide.md        # 新 App 接入手册
+    ├── audit-v1.2.md           # v1.2 代码审查报告
+    └── Nervus_完整开发文档.md
 ```
 
 ---

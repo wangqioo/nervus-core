@@ -458,7 +458,7 @@ services:
     image: nervus-app-workflow-viewer:latest
   arbor-core:
     build:
-      context: ./arbor-core
+      context: ./core/arbor
       dockerfile: Dockerfile
     container_name: nervus-arbor
     depends_on:
@@ -492,7 +492,7 @@ services:
     - 8090:8090
     restart: unless-stopped
     volumes:
-    - ./arbor-core/flows:/app/flows:ro
+    - ./core/arbor/flows:/app/flows:ro
     image: nervus-arbor-core:latest
   caddy:
     container_name: nervus-caddy
@@ -523,10 +523,10 @@ services:
     - 8900:8900
     restart: unless-stopped
     volumes:
-    - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    - ./core/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     - caddy-data:/data
     - caddy-certs:/config
-    - ./mobile:/srv/mobile:ro
+    - ./frontend:/srv/frontend:ro
   llama-cpp:
     command: '--model /models/Qwen3.5-4B-Q4_K_M.gguf --mmproj /models/mmproj-F16.gguf
       --port 8080 --ctx-size 4096 --n-gpu-layers 32 --parallel 4 --host 0.0.0.0 --log-disable
@@ -591,7 +591,7 @@ services:
     restart: unless-stopped
     volumes:
     - nats-data:/data
-    - ./nats/nats-server.conf:/etc/nats/nats-server.conf:ro
+    - ./core/nats/nats-server.conf:/etc/nats/nats-server.conf:ro
   postgres:
     container_name: nervus-postgres
     environment:
@@ -614,7 +614,7 @@ services:
     restart: unless-stopped
     volumes:
     - postgres-data:/var/lib/postgresql/data
-    - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    - ./core/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
   redis:
     command:
     - redis-server
@@ -636,7 +636,7 @@ services:
     restart: unless-stopped
     volumes:
     - redis-data:/data
-    - ./redis/redis.conf:/etc/redis/redis.conf:ro
+    - ./core/redis/redis.conf:/etc/redis/redis.conf:ro
   app-file-manager:
     build:
       context: .
@@ -671,7 +671,7 @@ services:
     image: nervus-app-files:latest
   whisper:
     build:
-      context: ./whisper
+      context: ./core/whisper
       dockerfile: Dockerfile
     container_name: nervus-whisper
     entrypoint: []

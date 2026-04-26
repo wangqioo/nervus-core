@@ -5,7 +5,7 @@ RUN curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.9.1/cad
     && chmod +x /usr/local/bin/caddy \
     && caddy version
 
-RUN mkdir -p /etc/caddy /srv/mobile /data /config
+RUN mkdir -p /etc/caddy /srv/frontend /data /config
 
 EXPOSE 80 443 2019
 
