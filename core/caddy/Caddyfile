@@ -41,6 +41,9 @@ nervus.local, https://150.158.146.192 {
         uri strip_prefix /api/meeting
         reverse_proxy nervus-app-meeting:8002
     }
+    handle /models/* {
+        reverse_proxy nervus-arbor:8090
+    }
     handle /api/knowledge/* {
         uri strip_prefix /api/knowledge
         reverse_proxy nervus-app-knowledge:8003
@@ -236,6 +239,9 @@ nats.nervus.local {
     handle /api/workflow/* {
         uri strip_prefix /api/workflow
         reverse_proxy nervus-app-workflow:8014
+    }
+    handle /models/* {
+        reverse_proxy nervus-arbor:8090
     }
     handle /api/* {
         uri strip_prefix /api
