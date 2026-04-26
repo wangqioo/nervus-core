@@ -180,13 +180,15 @@ nervus/
 │
 ├── ios/                        # iOS 原生壳子（Capacitor，负责打包安装到手机）
 │   ├── capacitor.config.json   # ← 部署时改这里：填入 Nervus 主机地址
+│   ├── src/                    # Capacitor 开发占位页，不是主前端
+│   ├── www/                    # Capacitor fallback 静态页，不是主前端
 │   └── ios/App/App/
 │       ├── MainViewController.swift   # SSL 自签名证书绕过 + 深色/浅色状态栏
 │       ├── AppDelegate.swift          # 应用生命周期
 │       └── Info.plist                 # 权限声明（麦克风、相册等）
 │
 ├── apps/                       # 各功能后端，每个都是独立 Docker 服务
-│   ├── file-manager/           # 文件传输助手，已联通前端（端口 8015）
+│   ├── file-manager/           # 文件传输助手，已联通前端（端口 8015；frontend/ 为旧版独立前端，当前未接主构建）
 │   ├── meeting-notes/          # 会议纪要，录音转文字 + AI 摘要（端口 8002）
 │   ├── pdf-extractor/          # PDF 解析与内容提取（端口 8008）
 │   ├── video-transcriber/      # 视频转文字，调用 Whisper（端口 8009）

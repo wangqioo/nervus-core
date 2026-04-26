@@ -1,14 +1,14 @@
 # 排除不需要进入 Docker build context 的文件
-# build context 是 nervus/ 根目录，只需要 nervus-sdk/ 和 apps/
+# build context 是仓库根目录；App 镜像只需要 apps/、sdk/python/ 和少量 core 配置。
 
-# 基础设施配置（容器内不需要）
-nats/
-redis/
-caddy/
-postgres/
-!postgres/init.sql
-!postgres/docker-entrypoint.sh
-ios-shell/
+# iOS 工程不参与服务端镜像构建
+ios/
+
+# 前端由 Caddy 通过 volume 挂载，不打进 App 镜像
+frontend/
+
+# 文档不参与镜像构建
+docs/
 
 # 日志、临时文件
 *.log
@@ -18,8 +18,9 @@ __pycache__/
 *.egg-info/
 .git/
 .gitignore
+.DS_Store
 
-# 模型文件（通过 volume 挂载，不走 build context）
+# 模型文件通过 volume 挂载，不走 build context
 models/
 *.gguf
 *.bin

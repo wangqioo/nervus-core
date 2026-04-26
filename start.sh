@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-cd /home/nvidia/nervus
+cd "$(dirname "$0")"
 
 log() { echo "[nervus] $(date '+%H:%M:%S') $*"; }
 
