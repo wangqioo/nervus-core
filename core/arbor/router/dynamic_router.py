@@ -12,7 +12,7 @@ from collections import deque
 
 import httpx
 
-from platform.apps.registry import AppRegistry
+from nervus_platform.apps.registry import AppRegistry
 from executor.flow_executor import FlowExecutor
 
 logger = logging.getLogger("nervus.arbor.dynamic_router")

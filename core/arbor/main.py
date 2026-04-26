@@ -13,16 +13,16 @@ import uvicorn
 from infra import nats_client, postgres_client, redis_client
 from infra.mdns import start_mdns, stop_mdns
 from infra.settings import Settings
-from platform.apps.registry import AppRegistry
-from platform.apps.routes import router as apps_router
-from platform.config.routes import router as config_router
-from platform.config.service import ConfigService
-from platform.models.service import ModelService
-from platform.models.routes import router as models_router
-from platform.events.service import EventService
-from platform.events.routes import router as events_router
-from platform.knowledge.service import KnowledgeService
-from platform.knowledge.routes import router as knowledge_router
+from nervus_platform.apps.registry import AppRegistry
+from nervus_platform.apps.routes import router as apps_router
+from nervus_platform.config.routes import router as config_router
+from nervus_platform.config.service import ConfigService
+from nervus_platform.models.service import ModelService
+from nervus_platform.models.routes import router as models_router
+from nervus_platform.events.service import EventService
+from nervus_platform.events.routes import router as events_router
+from nervus_platform.knowledge.service import KnowledgeService
+from nervus_platform.knowledge.routes import router as knowledge_router
 from router.fast_router import FastRouter
 from router.semantic_router import SemanticRouter
 from router.dynamic_router import DynamicRouter

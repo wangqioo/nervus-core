@@ -6,7 +6,7 @@
 from __future__ import annotations
 import logging
 
-from platform.apps.registry import AppRegistry
+from nervus_platform.apps.registry import AppRegistry
 from executor.flow_executor import FlowExecutor
 from executor.flow_loader import FlowLoader
 
