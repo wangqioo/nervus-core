@@ -23,6 +23,8 @@ async def health():
 async def system_status(request: Request):
     registry = getattr(request.app.state, "app_registry", None)
     apps = registry.list_apps() if registry else []
+    embedding = getattr(request.app.state, "embedding_pipeline", None)
+    fast_router = getattr(request.app.state, "fast_router", None)
     return {
         "platform": "nervus-core-platform",
         "version": "0.1.0",
@@ -31,6 +33,8 @@ async def system_status(request: Request):
             {"id": app.id, "name": app.name, "status": app.status.value}
             for app in apps
         ],
+        "flows_loaded": len(fast_router._flows) if fast_router else 0,
+        "embedding": embedding.stats if embedding else {},
     }
 
 

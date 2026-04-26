@@ -27,6 +27,7 @@ from router.semantic_router import SemanticRouter
 from router.dynamic_router import DynamicRouter
 from executor.flow_executor import FlowExecutor
 from executor.flow_loader import FlowLoader
+from executor.embedding_pipeline import init_pipeline, EmbeddingPipeline
 from api import notify_api, status_api
 
 logging.basicConfig(
@@ -59,6 +60,10 @@ async def lifespan(app: FastAPI):
     app.state.knowledge_service = KnowledgeService()
     await app.state.knowledge_service.init(postgres_client.pool)
 
+    embedding_pipeline = init_pipeline(settings.llm_url, postgres_client.pool)
+    await embedding_pipeline.start()
+    app.state.embedding_pipeline = embedding_pipeline
+
     flow_loader = FlowLoader(settings.flows_dir)
     flow_loader.load_all()
     flow_executor = FlowExecutor(app.state.app_registry)
@@ -80,6 +85,7 @@ async def lifespan(app: FastAPI):
     yield
 
     logger.info("Arbor Core Platform v0.1 shutting down...")
+    await app.state.embedding_pipeline.stop()
     stop_mdns()
     await nats_client.disconnect()
     await redis_client.disconnect()

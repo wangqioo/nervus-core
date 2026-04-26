@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 import asyncpg
 
+from executor.embedding_pipeline import enqueue_knowledge_item
 from .schemas import KnowledgeItem, KnowledgeSearchRequest, KnowledgeWriteRequest
 
 logger = logging.getLogger("nervus.platform.knowledge")
@@ -40,7 +41,10 @@ class KnowledgeService:
         )
         if row is None:
             return None
-        return _row_to_item(row)
+        item = _row_to_item(row)
+        embed_text = f"{req.title} {req.summary} {req.content}"[:2000]
+        enqueue_knowledge_item(item.id, embed_text)
+        return item
 
     async def search(self, req: KnowledgeSearchRequest) -> list[KnowledgeItem]:
         if self._pool is None:
