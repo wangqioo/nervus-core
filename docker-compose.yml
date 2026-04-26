@@ -652,6 +652,7 @@ services:
       APP_INTERNAL_URL: "http://nervus-app-files:8015"
       NATS_URL: nats://nervus-nats:4222
       REDIS_URL: redis://nervus-redis:6379
+      POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       ARBOR_URL: http://nervus-arbor:8090
       LLAMA_URL: http://nervus-llama:8080
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-50}

@@ -437,34 +437,39 @@ def _wechat_fallback(url: str, reason: str = "") -> dict:
 
 
 async def _ai_summarize_wechat(title: str, author: str, pub_time: str, content: str) -> dict:
-    """Send extracted article text to GLM for structured summarization."""
-    try:
-        from zhipuai import ZhipuAI
-        from backend.utils.config import GLM_API_KEY, GLM_MODEL
+    """Send extracted article text to platform LLM for structured summarization."""
+    import json
+    import os
 
-        client = ZhipuAI(api_key=GLM_API_KEY)
-        prompt = (
-            f"文章标题：{title}\n"
-            f"公众号：{author}\n"
-            f"发布时间：{pub_time}\n"
-            f"正文节选：\n{content}\n\n"
-            "请生成JSON格式简介（只输出JSON）：\n"
-            "{\n"
-            '  "summary": "一句话概括文章核心（20字内）",\n'
-            '  "description": "文章主要内容摘要（100字内）",\n'
-            '  "keywords": ["关键词1", "关键词2", "关键词3"],\n'
-            '  "highlights": ["亮点1", "亮点2"]\n'
-            "}"
-        )
-        response = client.chat.completions.create(
-            model=GLM_MODEL,
-            messages=[
-                {"role": "system", "content": "你是一个公众号文章摘要助手，擅长提炼文章核心观点。"},
-                {"role": "user", "content": prompt},
-            ],
-        )
-        raw = response.choices[0].message.content
-        import json
+    arbor_url = os.getenv("ARBOR_URL", "http://nervus-arbor:8090")
+    prompt = (
+        f"文章标题：{title}\n"
+        f"公众号：{author}\n"
+        f"发布时间：{pub_time}\n"
+        f"正文节选：\n{content}\n\n"
+        "请生成JSON格式简介（只输出JSON）：\n"
+        "{\n"
+        '  "summary": "一句话概括文章核心（20字内）",\n'
+        '  "description": "文章主要内容摘要（100字内）",\n'
+        '  "keywords": ["关键词1", "关键词2", "关键词3"],\n'
+        '  "highlights": ["亮点1", "亮点2"]\n'
+        "}"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{arbor_url}/models/chat",
+                json={
+                    "model": "qwen3.5",
+                    "messages": [
+                        {"role": "system", "content": "你是一个公众号文章摘要助手，擅长提炼文章核心观点。"},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "max_tokens": 512,
+                },
+            )
+            resp.raise_for_status()
+            raw = resp.json().get("content", "")
         m = re.search(r"\{[\s\S]*\}", raw)
         if m:
             return json.loads(m.group())

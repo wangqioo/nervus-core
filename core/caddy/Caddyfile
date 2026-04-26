@@ -12,14 +12,14 @@
 nervus.local, https://150.158.146.192 {
 
     # ── Per-app API routes (must be before /api/* catch-all) ──
+    handle /api/file-manager/* {
+        uri strip_prefix /api/file-manager
+        reverse_proxy nervus-app-files:8015
+    }
     handle /api/files* {
         reverse_proxy nervus-app-files:8015
     }
     handle /api/image-proxy* {
-        reverse_proxy nervus-app-files:8015
-    }
-    handle /files* {
-        uri strip_prefix /files
         reverse_proxy nervus-app-files:8015
     }
     handle /api/llm/* {
@@ -153,14 +153,14 @@ nats.nervus.local {
 
 # ── 纯 HTTP 内网访问（:8900）──
 :8900 {
+    handle /api/file-manager/* {
+        uri strip_prefix /api/file-manager
+        reverse_proxy nervus-app-files:8015
+    }
     handle /api/files* {
         reverse_proxy nervus-app-files:8015
     }
     handle /api/image-proxy* {
-        reverse_proxy nervus-app-files:8015
-    }
-    handle /files* {
-        uri strip_prefix /files
         reverse_proxy nervus-app-files:8015
     }
     handle /api/llm/* {

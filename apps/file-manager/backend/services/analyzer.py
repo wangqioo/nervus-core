@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import os
@@ -102,15 +103,15 @@ async def analyze_file(meta: FileSummary) -> FileSummary:
         if meta.type == FileType.link:
             result = await _analyze_link(meta.url)
         elif meta.type == FileType.image:
-            result = _analyze_image(meta)
+            result = await asyncio.to_thread(_analyze_image, meta)
         elif meta.type == FileType.document:
-            result = _analyze_document(meta)
+            result = await asyncio.to_thread(_analyze_document, meta)
         elif meta.type == FileType.video:
             result = _analyze_video(meta)
         elif meta.type == FileType.audio:
             result = _analyze_audio(meta)
         else:
-            result = _analyze_other(meta)
+            result = await asyncio.to_thread(_analyze_other, meta)
 
         meta.summary = result.get("summary", "")
         meta.description = result.get("description", "")
