@@ -12,6 +12,17 @@ class MainViewController: CAPBridgeViewController {
             wv.navigationDelegate = self
         }
     }
+
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        traitCollection.userInterfaceStyle == .dark ? .lightContent : .darkContent
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
+            setNeedsStatusBarAppearanceUpdate()
+        }
+    }
 }
 
 extension MainViewController: WKNavigationDelegate {
