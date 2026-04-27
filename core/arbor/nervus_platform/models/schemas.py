@@ -24,7 +24,7 @@ class ModelInfo(BaseModel):
 class ModelConfig(BaseModel):
     id: str
     name: str
-    provider: str = "llama.cpp"   # "llama.cpp" | "openai_compat"
+    provider: str = "llama.cpp"   # "llama.cpp" | "openai_compat" | "anthropic"
     endpoint: str = ""            # cloud endpoint; empty = use llm_url
     api_key_env: str = ""         # env var name holding the API key
     vision: bool = False
@@ -32,6 +32,8 @@ class ModelConfig(BaseModel):
     auto_extra: dict[str, Any] = Field(default_factory=dict)
     # actual model name sent to llama.cpp / cloud API; defaults to id if empty
     llm_model_name: str = ""
+    # Anthropic API version header (only used when provider == "anthropic")
+    anthropic_version: str = "2023-06-01"
 
 
 class ChatMessage(BaseModel):

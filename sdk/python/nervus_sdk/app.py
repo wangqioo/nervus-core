@@ -43,7 +43,7 @@ class NervusApp:
         self.app_id = app_id
         self.config = AppConfig.from_env(app_id)
 
-        self.llm = LLMClient(self.config.llama_url)
+        self.llm = LLMClient(self.config.arbor_url)
         self.memory = MemoryGraph
         self.ctx = Context
 

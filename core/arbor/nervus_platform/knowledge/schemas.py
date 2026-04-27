@@ -22,6 +22,8 @@ class KnowledgeSearchRequest(BaseModel):
     limit: int = Field(default=10, le=50)
     type: str | None = None
     tags: list[str] = Field(default_factory=list)
+    # semantic=True 时使用向量相似度搜索，False 时使用关键词搜索
+    semantic: bool = True
 
 
 class KnowledgeItem(BaseModel):

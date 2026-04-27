@@ -17,7 +17,7 @@ services:
       APP_PORT: 8011
       ARBOR_URL: http://nervus-arbor:8090
       DB_PATH: /data/calendar.db
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       REDIS_URL: redis://nervus-redis:6379
@@ -50,7 +50,7 @@ services:
     environment:
       APP_PORT: 8001
       ARBOR_URL: http://nervus-arbor:8090
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       REDIS_URL: redis://nervus-redis:6379
@@ -81,7 +81,7 @@ services:
     environment:
       APP_PORT: 8003
       ARBOR_URL: http://nervus-arbor:8090
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       REDIS_URL: redis://nervus-redis:6379
@@ -112,7 +112,7 @@ services:
     environment:
       APP_PORT: 8004
       ARBOR_URL: http://nervus-arbor:8090
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       REDIS_URL: redis://nervus-redis:6379
@@ -143,7 +143,7 @@ services:
     environment:
       APP_PORT: 8002
       ARBOR_URL: http://nervus-arbor:8090
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       REDIS_URL: redis://nervus-redis:6379
@@ -241,7 +241,7 @@ services:
     environment:
       APP_PORT: 8006
       ARBOR_URL: http://nervus-arbor:8090
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       REDIS_URL: redis://nervus-redis:6379
@@ -470,7 +470,7 @@ services:
         condition: service_healthy
     entrypoint: []
     environment:
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       LOG_LEVEL: info
       NATS_URL: nats://nervus-nats:4222
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
@@ -531,48 +531,6 @@ services:
     - caddy-data:/data
     - caddy-certs:/config
     - ./frontend:/srv/frontend:ro
-  llama-cpp:
-    command: '--model /models/Qwen3.5-4B-Q4_K_M.gguf --mmproj /models/mmproj-F16.gguf
-      --port 8080 --ctx-size 4096 --n-gpu-layers 32 --parallel 4 --host 0.0.0.0 --log-disable
-
-      '
-    container_name: nervus-llama
-    environment:
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
-      NVIDIA_VISIBLE_DEVICES: all
-    healthcheck:
-      interval: 30s
-      retries: 5
-      start_period: 60s
-      test:
-      - CMD-SHELL
-      - curl -sf http://localhost:8080/health || exit 1
-      timeout: 10s
-    image: ghcr.io/ggml-org/llama.cpp:server
-    networks:
-      nervus-net: null
-    ports:
-    - 8080:8080
-    restart: unless-stopped
-    runtime: nvidia
-    volumes:
-    - /home/nvidia/models/qwen3.5-4b:/models:ro
-  llama-cpp-dev:
-    command: '--model /models/Qwen3.5-4B-Q4_K_M.gguf --mmproj /models/mmproj-F16.gguf
-      --port 8080 --ctx-size 2048 --n-gpu-layers 0 --parallel 2 --host 0.0.0.0
-
-      '
-    container_name: nervus-llama-dev
-    image: ghcr.io/ggml-org/llama.cpp:server
-    networks:
-      nervus-net: null
-    ports:
-    - 8888:8080
-    profiles:
-    - dev
-    restart: unless-stopped
-    volumes:
-    - /home/nvidia/models/qwen3.5-4b:/models:ro
   nats:
     command:
     - -c
@@ -657,7 +615,7 @@ services:
       REDIS_URL: redis://nervus-redis:6379
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
       ARBOR_URL: http://nervus-arbor:8090
-      LLAMA_URL: http://nervus-llama:8080
+      LLAMA_URL: http://172.20.0.1:8080
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-50}
       LINKBOX_API_URL: ${LINKBOX_API_URL:-}
       LINKBOX_API_KEY: ${LINKBOX_API_KEY:-}
@@ -667,9 +625,9 @@ services:
       start_period: 30s
       test:
       - CMD
-      - curl
-      - -f
-      - http://localhost:8015/health
+      - python3
+      - -c
+      - "import urllib.request; urllib.request.urlopen('http://localhost:8015/health', timeout=5)"
       timeout: 10s
     networks:
       nervus-net: null
@@ -700,9 +658,9 @@ services:
       start_period: 30s
       test:
       - CMD
-      - curl
-      - -f
-      - http://localhost:8016/
+      - python3
+      - -c
+      - "import urllib.request; urllib.request.urlopen('http://localhost:8016/', timeout=5)"
       timeout: 10s
     networks:
       nervus-net: null

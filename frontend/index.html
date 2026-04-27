@@ -1652,7 +1652,7 @@ function renderAppItem(app, canDelete) {
   item.innerHTML = `${canDelete ? `<button class="adel" onclick="deleteApp('${app.id}',event)">✕</button>` : ''}<div class="aico" style="background:${color}">${app.icon || '🧩'}</div><span class="aname">${app.name}</span>`;
   item.addEventListener('click', () => {
     if (editMode) return;
-    if (app.url) openWebApp(app.name, app.url);
+    const _appUrl = app.url || app.route; if (_appUrl) { const _u = _appUrl.endsWith('/') ? _appUrl : _appUrl + '/'; openWebApp(app.name, _u); }
     else showAppPlaceholder(app.name, app.status);
   });
   let _pt;

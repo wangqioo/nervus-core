@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from .schemas import ChatRequest
@@ -36,10 +37,59 @@ async def models_status(request: Request):
 
 @router.post("/chat")
 async def chat(req: ChatRequest, request: Request):
+    """标准阻塞式对话"""
+    if req.stream:
+        # 流式请求走 SSE
+        svc = request.app.state.model_service
+        return StreamingResponse(
+            svc.chat_stream(req),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
     result = await request.app.state.model_service.chat(req)
     if result.error:
         raise HTTPException(status_code=502, detail=result.error)
     return result.model_dump()
+
+
+@router.post("/chat/stream")
+async def chat_stream(req: ChatRequest, request: Request):
+    """显式流式对话端点（等同于 chat 且 stream=true）"""
+    svc = request.app.state.model_service
+    return StreamingResponse(
+        svc.chat_stream(req),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+class EmbedRequest(BaseModel):
+    text: str
+
+
+@router.post("/embed")
+async def embed(body: EmbedRequest, request: Request):
+    """文本向量嵌入（本地模型）"""
+    svc = request.app.state.model_service
+    try:
+        embedding = await svc.embed(body.text)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return {"embedding": embedding, "dim": len(embedding)}
+
+
+class FallbackRequest(BaseModel):
+    model_id: str
+
+
+@router.put("/fallback")
+async def set_fallback(body: FallbackRequest, request: Request):
+    """设置本地模型失败时的云端 fallback 模型"""
+    svc = request.app.state.model_service
+    if body.model_id and body.model_id not in svc._configs:
+        raise HTTPException(status_code=404, detail=f"model {body.model_id!r} not found")
+    svc.set_fallback(body.model_id)
+    return {"status": "ok", "fallback_model": svc._fallback_model}
 
 
 class TestRequest(BaseModel):

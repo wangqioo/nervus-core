@@ -13,7 +13,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-import httpx
 import asyncpg
 
 logger = logging.getLogger("nervus.arbor.embedding")
@@ -40,12 +39,13 @@ class EmbeddingPipeline:
     - 任务加入队列后立即返回，不阻塞业务流程
     - 按优先级顺序处理
     - 失败自动重试（最多 3 次）
-    - 批量提交，减少数据库写入次数
+    - 通过 ModelService 统一调用本地 embed 接口
     """
 
-    def __init__(self, llama_url: str, db_pool: asyncpg.Pool):
-        self.llama_url = llama_url
+    def __init__(self, llama_url: str, db_pool: asyncpg.Pool, model_service=None):
+        self.llama_url = llama_url  # 保留，向后兼容
         self.db_pool = db_pool
+        self._model_service = model_service  # 优先使用 ModelService
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue(maxsize=1000)
         self._running = False
         self._processed = 0
@@ -121,11 +121,16 @@ class EmbeddingPipeline:
                 await asyncio.sleep(1)
 
     async def _generate_embedding(self, text: str) -> list[float]:
-        """调用 llama.cpp 生成文本向量"""
+        """生成文本向量，优先通过 ModelService，降级时直连 llama.cpp"""
+        if self._model_service is not None:
+            return await self._model_service.embed(text[:2000])
+
+        # 降级路径：ModelService 未注入时直连 llama.cpp（向后兼容）
+        import httpx
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
                 f"{self.llama_url}/v1/embeddings",
-                json={"model": "qwen3.5", "input": text[:2000]},  # 限制长度
+                json={"model": "qwen3.5", "input": text[:2000]},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -154,9 +159,9 @@ class EmbeddingPipeline:
 _pipeline: EmbeddingPipeline | None = None
 
 
-def init_pipeline(llama_url: str, db_pool: asyncpg.Pool) -> EmbeddingPipeline:
+def init_pipeline(llama_url: str, db_pool: asyncpg.Pool, model_service=None) -> EmbeddingPipeline:
     global _pipeline
-    _pipeline = EmbeddingPipeline(llama_url, db_pool)
+    _pipeline = EmbeddingPipeline(llama_url, db_pool, model_service=model_service)
     return _pipeline
 
 

@@ -4,15 +4,14 @@
 """
 
 from __future__ import annotations
-import asyncio
 import json
 import logging
 import time
 from collections import deque
 
-import httpx
-
 from nervus_platform.apps.registry import AppRegistry
+from nervus_platform.models.service import ModelService
+from nervus_platform.models.schemas import ChatRequest, ChatMessage
 from executor.flow_executor import FlowExecutor
 
 logger = logging.getLogger("nervus.arbor.dynamic_router")
@@ -53,12 +52,15 @@ PLANNING_PROMPT = """你是 Nervus 神经路由系统的动态规划引擎。
 
 
 class DynamicRouter:
-    def __init__(self, registry: AppRegistry, executor: FlowExecutor):
+    def __init__(self, registry: AppRegistry, executor: FlowExecutor,
+                 model_service: ModelService | None = None):
         self.registry = registry
         self.executor = executor
-        # 滑动窗口存储最近事件
         self._recent_events: deque = deque(maxlen=50)
-        self._llama_url = None
+        self._model_service = model_service
+
+    def set_model_service(self, svc: ModelService) -> None:
+        self._model_service = svc
 
     async def route(self, subject: str, event_data: dict) -> bool:
         """
@@ -71,40 +73,34 @@ class DynamicRouter:
             "timestamp": now,
         })
 
-        # 找出时间窗口内的关联事件
         correlated = self._find_correlated(subject, now)
         if len(correlated) < 2:
             return False
 
-        # 检测语义关联（只在有明显关联信号时触发）
         if not self._has_semantic_signal(subject, correlated):
             return False
 
-        logger.info(f"检测到 {len(correlated)} 个关联事件，启动动态规划")
+        logger.info("检测到 %d 个关联事件，启动动态规划", len(correlated))
 
         plan = await self._generate_plan(correlated)
         if not plan or not plan.get("correlation_detected"):
             return False
 
-        logger.info(f"动态规划: {plan.get('correlation_type')} — {plan.get('reasoning', '')[:80]}")
+        logger.info("动态规划: %s — %s",
+                    plan.get("correlation_type"), plan.get("reasoning", "")[:80])
 
-        # 执行计划
         await self._execute_plan(plan, event_data)
         return True
 
     def _find_correlated(self, current_subject: str, now: float) -> list[dict]:
-        """在时间窗口内找到语义相关的事件"""
         cutoff = now - CORRELATION_WINDOW
         recent = [e for e in self._recent_events if e["timestamp"] >= cutoff]
-
-        # 按域分组
         current_domain = current_subject.split(".")[0]
-        correlated = [e for e in recent if e["subject"].split(".")[0] == current_domain or
-                      self._semantically_related(current_subject, e["subject"])]
-        return correlated
+        return [e for e in recent
+                if e["subject"].split(".")[0] == current_domain
+                or self._semantically_related(current_subject, e["subject"])]
 
     def _semantically_related(self, s1: str, s2: str) -> bool:
-        """简单语义关联检测（预定义规则）"""
         related_pairs = [
             ("meeting.recording.processed", "media.photo.classified"),
             ("media.photo.classified", "memory.travel.moment_captured"),
@@ -117,8 +113,6 @@ class DynamicRouter:
         return False
 
     def _has_semantic_signal(self, subject: str, events: list[dict]) -> bool:
-        """判断是否有足够的语义信号触发动态规划"""
-        # 会议录音 + 白板照片 → 明确需要联动
         subjects = {e["subject"] for e in events}
         signal_groups = [
             {"meeting.recording.processed", "media.photo.classified"},
@@ -129,9 +123,9 @@ class DynamicRouter:
         return False
 
     async def _generate_plan(self, events: list[dict]) -> dict:
-        if not self._llama_url:
-            import os
-            self._llama_url = os.getenv("LLAMA_URL", "http://localhost:8080")
+        if self._model_service is None:
+            logger.warning("DynamicRouter: ModelService 未设置，跳过动态规划")
+            return {}
 
         context = await self._get_context()
         apps_summary = self._get_apps_summary()
@@ -147,23 +141,21 @@ class DynamicRouter:
             context=json.dumps(context, ensure_ascii=False),
         )
 
+        req = ChatRequest(
+            messages=[ChatMessage(role="user", content=prompt)],
+            temperature=0.1,
+            max_tokens=1024,
+            extra={"response_format": {"type": "json_object"}},
+        )
+
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.post(
-                    f"{self._llama_url}/v1/chat/completions",
-                    json={
-                        "model": "qwen3.5",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.1,
-                        "max_tokens": 1024,
-                        "response_format": {"type": "json_object"},
-                    }
-                )
-                resp.raise_for_status()
-                content = resp.json()["choices"][0]["message"]["content"]
-                return json.loads(content)
+            result = await self._model_service.chat(req)
+            if result.error:
+                logger.error("动态规划生成失败: %s", result.error)
+                return {}
+            return json.loads(result.content)
         except Exception as e:
-            logger.error(f"动态规划生成失败: {e}")
+            logger.error("动态规划生成失败: %s", e)
             return {}
 
     async def _execute_plan(self, plan: dict, trigger_event: dict) -> None:
@@ -174,15 +166,15 @@ class DynamicRouter:
             params = step.get("params", {})
             desc = step.get("description", "")
 
-            logger.info(f"动态规划步骤 {step.get('step')}: {desc}")
+            logger.info("动态规划步骤 %s: %s", step.get("step"), desc)
 
             try:
                 if action:
                     await self.registry.call_action(app_id, action, params)
                 else:
-                    await self.registry.send_intake(app_id, f"/intake/dynamic_plan", trigger_event)
+                    await self.registry.send_intake(app_id, "/intake/dynamic_plan", trigger_event)
             except Exception as e:
-                logger.error(f"动态规划步骤执行失败: {e}")
+                logger.error("动态规划步骤执行失败: %s", e)
 
     async def _get_context(self) -> dict:
         try:

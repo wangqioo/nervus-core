@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime
 from typing import Any
 
 import asyncpg
@@ -34,52 +35,79 @@ class EventService:
         )
         if row is None:
             return None
-        payload_data = row["payload"]
-        if isinstance(payload_data, str):
-            payload_data = json.loads(payload_data)
-        return PlatformEvent(
-            id=row["id"],
-            subject=row["subject"],
-            payload=payload_data,
-            source_app=row["source_app"],
-            created_at=row["created_at"],
-        )
+        return _row_to_event(row)
 
-    async def get_recent(self, limit: int = 50, subject_prefix: str = "") -> list[PlatformEvent]:
+    async def get_recent(
+        self,
+        limit: int = 50,
+        subject_prefix: str = "",
+        source_app: str = "",
+        since: datetime | None = None,
+        offset: int = 0,
+    ) -> list[PlatformEvent]:
         if self._pool is None:
             return []
+
+        conditions = []
+        params: list = []
+        idx = 1
+
         if subject_prefix:
-            rows = await self._pool.fetch(
-                """
-                SELECT id::text, subject, payload, source_app, created_at
-                FROM platform_events
-                WHERE subject LIKE $1
-                ORDER BY created_at DESC
-                LIMIT $2
-                """,
-                f"{subject_prefix}%",
-                limit,
-            )
-        else:
-            rows = await self._pool.fetch(
-                """
-                SELECT id::text, subject, payload, source_app, created_at
-                FROM platform_events
-                ORDER BY created_at DESC
-                LIMIT $1
-                """,
-                limit,
-            )
-        events = []
-        for row in rows:
-            payload_data = row["payload"]
-            if isinstance(payload_data, str):
-                payload_data = json.loads(payload_data)
-            events.append(PlatformEvent(
-                id=row["id"],
-                subject=row["subject"],
-                payload=payload_data,
-                source_app=row["source_app"],
-                created_at=row["created_at"],
-            ))
-        return events
+            conditions.append(f"subject LIKE ${idx}")
+            params.append(f"{subject_prefix}%")
+            idx += 1
+
+        if source_app:
+            conditions.append(f"source_app = ${idx}")
+            params.append(source_app)
+            idx += 1
+
+        if since:
+            conditions.append(f"created_at >= ${idx}")
+            params.append(since)
+            idx += 1
+
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        params.extend([limit, offset])
+
+        rows = await self._pool.fetch(
+            f"""
+            SELECT id::text, subject, payload, source_app, created_at
+            FROM platform_events
+            {where}
+            ORDER BY created_at DESC
+            LIMIT ${idx} OFFSET ${idx + 1}
+            """,
+            *params,
+        )
+        return [_row_to_event(r) for r in rows]
+
+    async def count(self, subject_prefix: str = "", source_app: str = "") -> int:
+        if self._pool is None:
+            return 0
+        conditions = []
+        params: list = []
+        idx = 1
+        if subject_prefix:
+            conditions.append(f"subject LIKE ${idx}")
+            params.append(f"{subject_prefix}%")
+            idx += 1
+        if source_app:
+            conditions.append(f"source_app = ${idx}")
+            params.append(source_app)
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        row = await self._pool.fetchrow(f"SELECT COUNT(*) AS cnt FROM platform_events {where}", *params)
+        return row["cnt"] if row else 0
+
+
+def _row_to_event(row: asyncpg.Record) -> PlatformEvent:
+    payload_data = row["payload"]
+    if isinstance(payload_data, str):
+        payload_data = json.loads(payload_data)
+    return PlatformEvent(
+        id=row["id"],
+        subject=row["subject"],
+        payload=payload_data,
+        source_app=row["source_app"],
+        created_at=row["created_at"],
+    )

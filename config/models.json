@@ -1,6 +1,9 @@
 {
   "default_text": "qwen3.5",
   "default_vision": "qwen3.5",
+
+  "fallback_model": "",
+
   "models": [
     {
       "id": "qwen3.5",
@@ -12,6 +15,7 @@
       "auto_extra": {}
     }
   ],
+
   "cloud": [
     {
       "id": "deepseek-chat",
@@ -19,28 +23,152 @@
       "provider": "openai_compat",
       "endpoint": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
+      "llm_model_name": "deepseek-chat",
       "vision": false,
       "context_length": 65536,
       "auto_extra": {}
     },
     {
+      "id": "deepseek-reasoner",
+      "name": "DeepSeek Reasoner（云端推理）",
+      "provider": "openai_compat",
+      "endpoint": "https://api.deepseek.com",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "llm_model_name": "deepseek-reasoner",
+      "vision": false,
+      "context_length": 65536,
+      "auto_extra": {}
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6（Anthropic）",
+      "provider": "anthropic",
+      "endpoint": "https://api.anthropic.com",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "llm_model_name": "claude-sonnet-4-6",
+      "vision": true,
+      "context_length": 200000,
+      "auto_extra": {}
+    },
+    {
+      "id": "claude-opus-4-6",
+      "name": "Claude Opus 4.6（Anthropic）",
+      "provider": "anthropic",
+      "endpoint": "https://api.anthropic.com",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "llm_model_name": "claude-opus-4-6",
+      "vision": true,
+      "context_length": 200000,
+      "auto_extra": {}
+    },
+    {
+      "id": "claude-opus-4-7",
+      "name": "Claude Opus 4.7（Anthropic）",
+      "provider": "anthropic",
+      "endpoint": "https://api.anthropic.com",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "llm_model_name": "claude-opus-4-7",
+      "vision": true,
+      "context_length": 200000,
+      "auto_extra": {}
+    },
+    {
       "id": "glm-4-flash",
-      "name": "GLM-4 Flash（云端）",
+      "name": "GLM-4 Flash（智谱）",
       "provider": "openai_compat",
       "endpoint": "https://open.bigmodel.cn/api/paas/v4",
       "api_key_env": "ZHIPUAI_API_KEY",
+      "llm_model_name": "glm-4.7-flash",
       "vision": false,
       "context_length": 128000,
       "auto_extra": {}
     },
     {
       "id": "glm-4v-flash",
-      "name": "GLM-4V Flash（云端视觉）",
+      "name": "GLM-4V Flash（智谱视觉）",
       "provider": "openai_compat",
       "endpoint": "https://open.bigmodel.cn/api/paas/v4",
       "api_key_env": "ZHIPUAI_API_KEY",
+      "llm_model_name": "glm-4.5-flash",
       "vision": true,
       "context_length": 8192,
+      "auto_extra": {}
+    },
+    {
+      "id": "qwen-plus",
+      "name": "通义千问 Plus（阿里云）",
+      "provider": "openai_compat",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "llm_model_name": "qwen3.5-plus",
+      "vision": false,
+      "context_length": 131072,
+      "auto_extra": {}
+    },
+    {
+      "id": "qwen-max",
+      "name": "通义千问 Max（阿里云）",
+      "provider": "openai_compat",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "llm_model_name": "qwen-max-latest",
+      "vision": false,
+      "context_length": 131072,
+      "auto_extra": {}
+    },
+    {
+      "id": "qwen-vl-plus",
+      "name": "通义千问 VL Plus（阿里云视觉）",
+      "provider": "openai_compat",
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "llm_model_name": "qwen-vl-plus",
+      "vision": true,
+      "context_length": 32768,
+      "auto_extra": {}
+    },
+    {
+      "id": "gpt-4o",
+      "name": "GPT-4o（OpenAI）",
+      "provider": "openai_compat",
+      "endpoint": "https://api.openai.com",
+      "api_key_env": "OPENAI_API_KEY",
+      "llm_model_name": "gpt-4o",
+      "vision": true,
+      "context_length": 128000,
+      "auto_extra": {}
+    },
+    {
+      "id": "gpt-4o-mini",
+      "name": "GPT-4o mini（OpenAI）",
+      "provider": "openai_compat",
+      "endpoint": "https://api.openai.com",
+      "api_key_env": "OPENAI_API_KEY",
+      "llm_model_name": "gpt-4o-mini",
+      "vision": true,
+      "context_length": 128000,
+      "auto_extra": {}
+    },
+    {
+      "id": "groq-llama4",
+      "name": "Llama 4 Scout（Groq）",
+      "provider": "openai_compat",
+      "endpoint": "https://api.groq.com/openai",
+      "api_key_env": "GROQ_API_KEY",
+      "llm_model_name": "llama-4-scout-17b-16e-instruct",
+      "vision": false,
+      "context_length": 131072,
+      "auto_extra": {}
+    },
+    {
+      "id": "minimax-m2",
+      "name": "MiniMax M2.7（MiniMax）",
+      "provider": "openai_compat",
+      "endpoint": "https://api.minimax.chat",
+      "api_key_env": "MINIMAX_API_KEY",
+      "llm_model_name": "MiniMax-M2.7",
+      "vision": false,
+      "context_length": 1000000,
       "auto_extra": {}
     }
   ]

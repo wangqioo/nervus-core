@@ -153,13 +153,14 @@ class ModelService:
 
     async def _chat_local(self, req: ChatRequest, cfg: ModelConfig) -> ChatResponse:
         model_name = cfg.llm_model_name or cfg.id
-        messages = _inject_no_think([m.model_dump() for m in req.messages])
+        messages = [m.model_dump() for m in req.messages]
         payload: dict[str, Any] = {
             "model": model_name,
             "messages": messages,
             "max_tokens": req.max_tokens,
             "temperature": req.temperature,
             "stream": False,
+            "chat_template_kwargs": {"enable_thinking": False},
         }
         merged_extra = {**cfg.auto_extra, **req.extra}
         payload.update(merged_extra)
@@ -175,7 +176,7 @@ class ModelService:
         except Exception as exc:
             return ChatResponse(model=cfg.id, provider=cfg.provider, content="", error=str(exc))
 
-        return _parse_llama_response(data, cfg)
+        return _parse_openai_response(data, cfg)
 
     async def _chat_cloud(self, req: ChatRequest, cfg: ModelConfig) -> ChatResponse:
         api_key = await self.get_api_key(cfg.id)
@@ -232,23 +233,10 @@ def _inject_no_think(messages: list[dict]) -> list[dict]:
     return result
 
 
-def _parse_llama_response(data: dict, cfg: ModelConfig) -> ChatResponse:
-    """Parse llama.cpp chat completions response, extracting reasoning_content too."""
-    try:
-        msg = data["choices"][0]["message"]
-        content = msg.get("content") or ""
-        reasoning = msg.get("reasoning_content") or ""
-        usage = data.get("usage", {})
-    except (KeyError, IndexError) as exc:
-        return ChatResponse(model=cfg.id, provider=cfg.provider, content="",
-                            error=f"unexpected response shape: {exc}")
-    return ChatResponse(model=cfg.id, provider=cfg.provider, content=content,
-                        reasoning_content=reasoning, usage=usage)
-
-
 def _parse_openai_response(data: dict, cfg: ModelConfig) -> ChatResponse:
     try:
-        content = data["choices"][0]["message"]["content"] or ""
+        msg = data["choices"][0]["message"]
+        content = msg.get("content") or msg.get("reasoning_content") or ""
         usage = data.get("usage", {})
     except (KeyError, IndexError) as exc:
         return ChatResponse(model=cfg.id, provider=cfg.provider, content="",

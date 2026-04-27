@@ -61,8 +61,10 @@ async def lifespan(app: FastAPI):
 
     app.state.knowledge_service = KnowledgeService()
     await app.state.knowledge_service.init(postgres_client.pool)
+    app.state.knowledge_service.set_model_service(app.state.model_service)
 
-    embedding_pipeline = init_pipeline(settings.llm_url, postgres_client.pool)
+    model_svc = app.state.model_service
+    embedding_pipeline = init_pipeline(settings.llm_url, postgres_client.pool, model_svc)
     await embedding_pipeline.start()
     app.state.embedding_pipeline = embedding_pipeline
 
@@ -71,10 +73,8 @@ async def lifespan(app: FastAPI):
     flow_executor = FlowExecutor(app.state.app_registry)
     fast_router = FastRouter(app.state.app_registry, flow_executor)
     fast_router.load_flows(flow_loader.flows)
-    semantic_router = SemanticRouter(app.state.app_registry, flow_executor)
-    semantic_router.set_llama_url(settings.llm_url)
-    dynamic_router = DynamicRouter(app.state.app_registry, flow_executor)
-    dynamic_router._llama_url = settings.llm_url
+    semantic_router = SemanticRouter(app.state.app_registry, flow_executor, model_service=model_svc)
+    dynamic_router = DynamicRouter(app.state.app_registry, flow_executor, model_service=model_svc)
     app.state.fast_router = fast_router
     app.state.semantic_router = semantic_router
     app.state.dynamic_router = dynamic_router
