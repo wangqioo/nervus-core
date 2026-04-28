@@ -1603,6 +1603,11 @@ document.addEventListener('mouseup',e=>{if(!dragging)return;dragging=false;handl
 window.addEventListener('message',e=>{if(e.data?.type==='nervus-nav'&&e.data?.action==='back')nav('home');});
 
 // ── App screens (spec only remains as native screen) ──────
+function openApp(id) {
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('open'));
+  const el = document.getElementById('app-' + id);
+  if (el) el.classList.add('open');
+}
 function closeApp() {
   document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('open'));
 }
@@ -1678,8 +1683,20 @@ async function renderAppGrid() {
     nervusApps = (data.apps || []).filter(a => a.type === 'nervus');
   } catch {}
 
+  // Built-in native screens (always shown first)
+  const builtinApps = [
+    { id: 'spec', name: '开发规范', icon: '📐', color: 'linear-gradient(135deg,rgba(255,215,0,.22),rgba(200,165,0,.1))', status: 'online', _native: true },
+  ];
+  builtinApps.forEach(app => {
+    const item = document.createElement('div');
+    item.className = 'aitem';
+    item.innerHTML = `<div class="aico" style="background:${app.color}">${app.icon}</div><span class="aname">${app.name}</span>`;
+    item.addEventListener('click', () => openApp(app.id));
+    nervusGrid.appendChild(item);
+  });
+
   if (nervusApps.length === 0) {
-    nervusGrid.innerHTML = '<div class="apps-empty">暂无已注册的原生应用</div>';
+    nervusGrid.insertAdjacentHTML('beforeend', '<div class="apps-empty" style="width:100%">暂无已注册的原生应用</div>');
   } else {
     nervusApps.forEach(app => nervusGrid.appendChild(renderAppItem(app, false)));
   }

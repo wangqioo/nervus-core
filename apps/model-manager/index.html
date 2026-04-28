@@ -126,7 +126,7 @@
   <div id="cloud-models"></div>
 </section>
 
-<section>
+<section id="test-section">
   <h2>快速测试</h2>
   <div class="card">
     <div class="test-row">
@@ -319,9 +319,12 @@ async function runTest() {
 function quickTest(modelId) {
   document.getElementById('test-model').value = modelId;
   document.getElementById('test-prompt').value = '你好，介绍一下自己';
-  document.getElementById('test-response').style.display = 'none';
-  document.querySelector('section:last-of-type').scrollIntoView({ behavior: 'smooth' });
-  setTimeout(() => runTest(), 300);
+  const box = document.getElementById('test-response');
+  box.style.display = 'none';
+  // Scroll within the page container only (avoid scrollIntoView which can bleed into parent iframe)
+  const testSection = document.getElementById('test-section');
+  if (testSection) testSection.scrollTop = 0;
+  setTimeout(() => runTest(), 100);
 }
 
 load();
