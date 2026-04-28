@@ -204,21 +204,10 @@ onUnmounted(() => { clearInterval(timer); window.removeEventListener('resize', u
 html, body { width: 100%; height: 100%; overflow: hidden; }
 
 body {
-  background: #020208;
-  background-image:
-    radial-gradient(ellipse 800px 600px at 15% 20%, rgba(80,60,180,.18) 0%, transparent 70%),
-    radial-gradient(ellipse 600px 500px at 85% 80%, rgba(30,140,120,.12) 0%, transparent 70%);
+  background: var(--bg);
   font-family: 'PingFang SC', -apple-system, 'Helvetica Neue', sans-serif;
   color: var(--text);
   display: flex; align-items: center; justify-content: center;
-  transition: background .3s;
-}
-
-[data-theme="light"] body {
-  background: #D8D8E8;
-  background-image:
-    radial-gradient(ellipse 700px 500px at 20% 20%, rgba(107,82,240,.07) 0%, transparent 70%),
-    radial-gradient(ellipse 500px 400px at 80% 80%, rgba(0,200,150,.06) 0%, transparent 70%);
 }
 
 /* ── Phone shell ── */
