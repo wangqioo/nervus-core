@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "定时拉取 RSS 文章并发布到知识总线",
   "icon": "📰",
-  "route": "/rss/",
+  "route": "/api/rss",
   "service": {
     "container": "nervus-app-rss",
     "internal_url": "http://nervus-app-rss:8010",
@@ -14,10 +14,15 @@
   },
   "capabilities": {
     "actions": [
-      {"name": "fetch_feed", "description": "拉取 RSS 源"}
+      {
+        "name": "fetch_feed",
+        "description": "拉取 RSS 源"
+      }
     ],
     "consumes": [],
-    "emits": ["knowledge.article.fetched"],
+    "emits": [
+      "knowledge.article.fetched"
+    ],
     "models": [],
     "writes": []
   }

@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "统一收录所有知识来源，语义检索，AI 问答",
   "icon": "📚",
-  "route": "/knowledge/",
+  "route": "/api/knowledge",
   "service": {
     "container": "nervus-app-knowledge",
     "internal_url": "http://nervus-app-knowledge:8003",
@@ -14,10 +14,22 @@
   },
   "capabilities": {
     "actions": [
-      {"name": "embed_and_store", "description": "向量化并存入知识库"},
-      {"name": "semantic_search", "description": "语义检索知识库"},
-      {"name": "ask", "description": "基于知识库回答问题"},
-      {"name": "index_meeting", "description": "索引会议纪要"}
+      {
+        "name": "embed_and_store",
+        "description": "向量化并存入知识库"
+      },
+      {
+        "name": "semantic_search",
+        "description": "语义检索知识库"
+      },
+      {
+        "name": "ask",
+        "description": "基于知识库回答问题"
+      },
+      {
+        "name": "index_meeting",
+        "description": "索引会议纪要"
+      }
     ],
     "consumes": [
       "knowledge.document.indexed",
@@ -28,6 +40,8 @@
     ],
     "emits": [],
     "models": [],
-    "writes": ["knowledge"]
+    "writes": [
+      "knowledge"
+    ]
   }
 }

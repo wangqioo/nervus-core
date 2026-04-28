@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "定时提醒和智能通知，感知最佳触发时机",
   "icon": "⏰",
-  "route": "/reminder/",
+  "route": "/api/reminder",
   "service": {
     "container": "nervus-app-reminder",
     "internal_url": "http://nervus-app-reminder:8012",
@@ -14,12 +14,26 @@
   },
   "capabilities": {
     "actions": [
-      {"name": "create_reminder", "description": "创建提醒"},
-      {"name": "snooze_reminder", "description": "暂缓提醒"},
-      {"name": "list_upcoming", "description": "获取即将触发的提醒"}
+      {
+        "name": "create_reminder",
+        "description": "创建提醒"
+      },
+      {
+        "name": "snooze_reminder",
+        "description": "暂缓提醒"
+      },
+      {
+        "name": "list_upcoming",
+        "description": "获取即将触发的提醒"
+      }
     ],
-    "consumes": ["schedule.reminder.triggered", "context.user_state.updated"],
-    "emits": ["schedule.reminder.triggered"],
+    "consumes": [
+      "schedule.reminder.triggered",
+      "context.user_state.updated"
+    ],
+    "emits": [
+      "schedule.reminder.triggered"
+    ],
     "models": [],
     "writes": []
   }

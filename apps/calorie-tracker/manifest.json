@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "AI 自动记录饮食，跟踪热量目标。拍照即记录，零手动输入。",
   "icon": "🔥",
-  "route": "/calorie/",
+  "route": "/api/calorie",
   "service": {
     "container": "nervus-app-calorie",
     "internal_url": "http://nervus-app-calorie:8001",
@@ -14,13 +14,29 @@
   },
   "capabilities": {
     "actions": [
-      {"name": "analyze_meal", "description": "分析食物照片，返回食物名称和估算热量"},
-      {"name": "get_today_summary", "description": "获取今日热量汇总"},
-      {"name": "set_daily_budget", "description": "设置每日热量目标"}
+      {
+        "name": "analyze_meal",
+        "description": "分析食物照片，返回食物名称和估算热量"
+      },
+      {
+        "name": "get_today_summary",
+        "description": "获取今日热量汇总"
+      },
+      {
+        "name": "set_daily_budget",
+        "description": "设置每日热量目标"
+      }
     ],
-    "consumes": ["media.photo.classified"],
-    "emits": ["health.calorie.meal_logged", "health.calorie.budget_alert"],
+    "consumes": [
+      "media.photo.classified"
+    ],
+    "emits": [
+      "health.calorie.meal_logged",
+      "health.calorie.budget_alert"
+    ],
     "models": [],
-    "writes": ["memory"]
+    "writes": [
+      "memory"
+    ]
   }
 }

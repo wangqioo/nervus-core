@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "可视化 Arbor Core 的 Flow 配置和实时执行日志，辅助调试和监控",
   "icon": "🔍",
-  "route": "/workflow/",
+  "route": "/api/workflow",
   "service": {
     "container": "nervus-app-workflow",
     "internal_url": "http://nervus-app-workflow:8014",
@@ -14,8 +14,14 @@
   },
   "capabilities": {
     "actions": [
-      {"name": "get_flows", "description": "获取所有 Flow 配置"},
-      {"name": "get_logs", "description": "获取执行日志"}
+      {
+        "name": "get_flows",
+        "description": "获取所有 Flow 配置"
+      },
+      {
+        "name": "get_logs",
+        "description": "获取执行日志"
+      }
     ],
     "consumes": [],
     "emits": [],

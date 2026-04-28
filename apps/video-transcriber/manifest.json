@@ -6,7 +6,7 @@
   "version": "0.1.0",
   "description": "视频音轨转写文字后发布到知识总线",
   "icon": "🎬",
-  "route": "/video/",
+  "route": "/api/video",
   "service": {
     "container": "nervus-app-video",
     "internal_url": "http://nervus-app-video:8009",
@@ -14,10 +14,15 @@
   },
   "capabilities": {
     "actions": [
-      {"name": "transcribe_video", "description": "转写视频"}
+      {
+        "name": "transcribe_video",
+        "description": "转写视频"
+      }
     ],
     "consumes": [],
-    "emits": ["knowledge.video.transcribed"],
+    "emits": [
+      "knowledge.video.transcribed"
+    ],
     "models": [],
     "writes": []
   }
