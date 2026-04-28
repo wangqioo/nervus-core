@@ -1,19 +1,22 @@
 # Nervus App 接入手册
 
 > 拿到这份文档即可独立完成接入，无需参考其他资料。
+>
+> 最后更新：2026-04-28（与 v1.0 代码同步）
 
 ---
 
 ## 1. 架构一眼看懂
 
 ```
-iPhone/Browser
+iPhone / Browser
     │
     ▼ HTTP
 Caddy (:443 / :8900)
     │
     ├─ /api/{app-id}/*  ──►  nervus-app-{id}:{port}   （你的 App）
-    ├─ /api/models/chat  ──►  nervus-arbor:8090         （LLM 网关）
+    ├─ /files/*          ──►  nervus-app-files:8015     （文件管理器）
+    ├─ /api/models/*     ──►  nervus-arbor:8090         （LLM 网关）
     └─ /api/*            ──►  nervus-arbor:8090         （平台基座）
                                       │
                          ┌────────────┼────────────┐
@@ -22,34 +25,35 @@ Caddy (:443 / :8900)
 ```
 
 **每个 App 是独立的 Docker 容器，通过 Nervus SDK 接入生态：**
-- 启动时向 Arbor 注册（自动）
-- 每 60s 上报心跳（自动）
+- 启动时向 Arbor 自动注册
+- 每 60s 向 Arbor 上报心跳（自动）
 - 通过 NATS 收发事件
-- 向平台 API 写入知识/读取数据
+- 通过 Arbor REST API 读写知识库 / 事件
 
 ---
 
 ## 2. 已用端口
 
-新 App 从 **8016** 往后顺序分配。
+新 App 从 **8017** 往后顺序分配。
 
-| 端口 | App ID |
-|------|--------|
-| 8001 | calorie-tracker |
-| 8002 | meeting-notes |
-| 8003 | knowledge-base |
-| 8004 | life-memory |
-| 8005 | sense |
-| 8006 | photo-scanner |
-| 8007 | personal-notes |
-| 8008 | pdf-extractor |
-| 8009 | video-transcriber |
-| 8010 | rss-reader |
-| 8011 | calendar |
-| 8012 | reminder |
-| 8013 | status-sense |
-| 8014 | workflow-viewer |
-| 8015 | file-manager |
+| 端口 | App ID | 容器名 |
+|------|--------|--------|
+| 8001 | calorie-tracker | nervus-app-calorie |
+| 8002 | meeting-notes | nervus-app-meeting |
+| 8003 | knowledge-base | nervus-app-knowledge |
+| 8004 | life-memory | nervus-app-life |
+| 8005 | sense | nervus-app-sense |
+| 8006 | photo-scanner | nervus-app-photo |
+| 8007 | personal-notes | nervus-app-notes |
+| 8008 | pdf-extractor | nervus-app-pdf |
+| 8009 | video-transcriber | nervus-app-video |
+| 8010 | rss-reader | nervus-app-rss |
+| 8011 | calendar | nervus-app-calendar |
+| 8012 | reminder | nervus-app-reminder |
+| 8013 | status-sense | nervus-app-status-sense |
+| 8014 | workflow-viewer | nervus-app-workflow |
+| 8015 | file-manager | nervus-app-files |
+| 8016 | model-manager | nervus-app-model-manager |
 
 ---
 
@@ -57,14 +61,14 @@ Caddy (:443 / :8900)
 
 1. 创建 `apps/{app-id}/` 目录（`main.py` + `manifest.json` + `Dockerfile` + `requirements.txt`）
 2. 在 `docker-compose.yml` 添加服务块
-3. 在 `core/caddy/Caddyfile` 两处添加路由
+3. 在 `core/caddy/Caddyfile` 两处路由块添加路由（HTTPS + HTTP:8900）
 4. 构建并部署
 
 ---
 
 ## 4. manifest.json（必须）
 
-放在 `apps/{app-id}/manifest.json`，SDK 启动时自动加载（Docker 挂载到 `/app/manifest.json`）。
+放在 `apps/{app-id}/manifest.json`，SDK 启动时自动从 `/app/manifest.json` 加载。
 
 ```json
 {
@@ -79,7 +83,7 @@ Caddy (:443 / :8900)
   "service": {
     "container": "nervus-app-habit",
     "internal_url": "",
-    "port": 8016
+    "port": 8017
   },
   "capabilities": {
     "actions": [
@@ -135,7 +139,7 @@ DB_PATH = os.getenv("DB_PATH", "/data/{app-id}.db")
 
 def get_db():
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -181,10 +185,9 @@ async def create_habit(body: dict):
 # ── 事件订阅（可选）─────────────────────────
 # @nervus.on("system.daily.morning")
 # async def on_morning(event: Event):
-#     # 每天早上触发
 #     pass
 
-# ── 状态快照（供前端 / Sense 面板）──────────
+# ── 状态快照（供 Sense 面板）────────────────
 @nervus.state
 async def get_state():
     with get_db() as conn:
@@ -193,7 +196,7 @@ async def get_state():
 
 # ── 启动 ──────────────────────────────────
 if __name__ == "__main__":
-    nervus.run(port=int(os.getenv("APP_PORT", "8016")))
+    nervus.run(port=int(os.getenv("APP_PORT", "8017")))
 ```
 
 ---
@@ -201,9 +204,9 @@ if __name__ == "__main__":
 ## 6. Dockerfile 模板
 
 ```dockerfile
-FROM nervus-python-base:latest
+FROM python:3.11-slim
 WORKDIR /app
-COPY nervus-sdk /app/nervus-sdk
+COPY sdk/python /app/nervus-sdk
 COPY apps/{app-id}/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple \
  && pip install --no-cache-dir /app/nervus-sdk -i https://pypi.tuna.tsinghua.edu.cn/simple
@@ -214,7 +217,10 @@ EXPOSE {PORT}
 CMD ["python", "main.py"]
 ```
 
-> 关键：`manifest.json` 必须复制到 `/app/manifest.json`，SDK 会从这里自动加载。
+> **重要：**
+> - `COPY sdk/python /app/nervus-sdk` — SDK 在仓库根的 `sdk/python/` 目录，不是 `nervus-sdk/`
+> - `manifest.json` 必须复制到 `/app/manifest.json`，SDK 自动从此处加载
+> - `build.context` 必须是 `.`（仓库根），这样才能 COPY `sdk/python`
 
 ---
 
@@ -241,8 +247,8 @@ CMD ["python", "main.py"]
       NATS_URL: nats://nervus-nats:4222
       REDIS_URL: redis://nervus-redis:6379
       POSTGRES_URL: postgresql://nervus:nervus_secret@nervus-postgres:5432/nervus?sslmode=disable
-      LLAMA_URL: http://nervus-llama:8080
       ARBOR_URL: http://nervus-arbor:8090
+      LLAMA_URL: http://172.20.0.1:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{PORT}/health"]
       interval: 30s
@@ -251,7 +257,14 @@ CMD ["python", "main.py"]
       start_period: 30s
 ```
 
-> `APP_INTERNAL_URL` 是 Arbor 回调你的 App 时用的地址，必须填对。
+> **热重载技巧：** 如果 App 有单文件静态 HTML（如 `index.html`），加 volume mount 就不需要重建镜像：
+>
+> ```yaml
+>     volumes:
+>     - ./apps/{app-id}/index.html:/app/index.html:ro
+> ```
+>
+> 改完 HTML 后只需 `docker compose restart app-{app-id}`，无需重建镜像。
 
 ---
 
@@ -259,13 +272,24 @@ CMD ["python", "main.py"]
 
 文件位置：`core/caddy/Caddyfile`。
 
-有两个块（HTTPS `nervus.local` 和 HTTP `:8900`），**两处都要加**，且必须放在 `handle /api/*` 之前：
+Caddyfile 有两个块（HTTPS `nervus.local` 和 HTTP `:8900`），**两处都要加**，且必须放在 `handle /api/*` 之前：
 
 ```caddyfile
+    handle /api/{app-id} {
+        redir /api/{app-id}/ 301
+    }
     handle /api/{app-id}/* {
         uri strip_prefix /api/{app-id}
         reverse_proxy nervus-app-{short-name}:{PORT}
     }
+```
+
+改完后重载 Caddy：
+
+```bash
+docker restart nervus-caddy
+# 或零停机重载
+make reload-caddy
 ```
 
 ---
@@ -275,13 +299,20 @@ CMD ["python", "main.py"]
 ```bash
 cd ~/nervus
 
-# 构建新镜像
+# 首次构建并启动
 docker compose build app-{app-id}
-
-# 启动
 docker compose up -d app-{app-id}
 
-# 重载 Caddy 路由
+# 代码改了，重建并重启
+docker compose up -d --build --no-deps app-{app-id}
+
+# 只改了 HTML / config（有 volume mount），只重启
+docker compose restart app-{app-id}
+
+# 强制重建容器（docker-compose.yml 配置改了，如 volume mount）
+docker compose up -d --no-deps --force-recreate app-{app-id}
+
+# 重载 Caddy
 docker restart nervus-caddy
 
 # 验证
@@ -298,10 +329,8 @@ curl -s http://localhost:8900/api/apps | python3 -m json.tool | grep "{app-id}"
 
 ### 10.1 调用 LLM
 
-推荐走平台 Chat 网关（`/api/models/chat`），避免直连 llama.cpp：
-
 ```python
-# 方式 A：通过 SDK（内部走 llama.cpp）
+# 方式 A：通过 SDK LLMClient（走 ARBOR_URL → 默认模型）
 text = await nervus.llm.chat(
     prompt="用户输入",
     system="你是专业助手，简洁回答。",
@@ -309,26 +338,29 @@ text = await nervus.llm.chat(
     max_tokens=512,
 )
 
-# 方式 B：调用平台 Chat 网关（推荐，模型不可用时返回结构化错误）
+# 方式 B：直接调用平台 Chat 网关（推荐，可指定模型）
 import httpx
 async with httpx.AsyncClient() as client:
     resp = await client.post(
         f"{os.getenv('ARBOR_URL')}/models/chat",
         json={
-            "model": "qwen3.5",
+            "model": "qwen3.5",          # 或 "deepseek-chat"、"glm-4-flash" 等
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 512,
+            "chat_template_kwargs": {"enable_thinking": False},  # Qwen3.5 必须加
         }
     )
     content = resp.json()["content"]
 ```
+
+> **注意：** Qwen 3.5 是推理模型，不加 `enable_thinking: False` 会在输出里混入 `<think>...</think>` 标签。
 
 ### 10.2 视觉识别
 
 ```python
 data = await nervus.llm.vision_json(
     image_path="/data/photo.jpg",
-    prompt="返回 {items: [{name, kcal}]}",
+    prompt="返回 JSON：{items: [{name, kcal}]}",
 )
 ```
 
@@ -386,14 +418,31 @@ async with httpx.AsyncClient() as client:
 
 ---
 
-## 11. 接入 Checklist
+## 11. 前端开发规范（iframe 运行环境）
+
+所有 App 前端运行在父页面的 iframe 内。**必须遵守：**
+
+| 禁止 | 替代方案 |
+|------|---------|
+| `element.scrollIntoView()` | 操作滚动容器的 `scrollTop` |
+| `window.parent.*` | 不需要，通过 API 通信 |
+| `window.top.*` | 不需要 |
+| `alert()` / `confirm()` | 在页面内显示错误状态 |
+| 硬编码 IP / 端口 | 使用相对路径 `/api/...` |
+| `body` 本身可滚动 | body 固定 100vh，滚动只在明确容器内发生 |
+
+> 详见前端内置开发规范页（从应用列表点击「📐 开发规范」进入，第 13 页）。
+
+---
+
+## 12. 接入 Checklist
 
 ```
 □ 1. apps/{app-id}/manifest.json 已创建（schema_version: "0.1"）
 □ 2. main.py 完成，NervusApp("{app-id}") 与 manifest.id 一致
-□ 3. Dockerfile 中 manifest.json 复制到 /app/manifest.json
-□ 4. docker-compose.yml 服务块已添加（含 APP_INTERNAL_URL）
-□ 5. Caddyfile 两处路由块均已添加
+□ 3. Dockerfile：sdk/python → /app/nervus-sdk，manifest.json → /app/manifest.json
+□ 4. docker-compose.yml 服务块已添加（含 APP_INTERNAL_URL、build.context: .）
+□ 5. Caddyfile 两处路由块（HTTPS + :8900）均已添加
 □ 6. docker compose build app-{app-id}  ← 构建成功
 □ 7. docker compose up -d app-{app-id}  ← 容器已 Up
 □ 8. curl /health 返回 {"status":"ok"}
@@ -405,19 +454,28 @@ async with httpx.AsyncClient() as client:
 
 ---
 
-## 12. 常见问题
+## 13. 常见问题
 
 **Q: App 启动后没有出现在 /api/apps？**
-检查 `APP_INTERNAL_URL` 是否填对；检查 Arbor 是否健康（`curl /api/health`）；查看 App 日志 `docker logs nervus-app-{name}`。
+检查 `APP_INTERNAL_URL` 是否填对；Arbor 是否健康（`curl http://localhost:8900/api/health`）；查看 App 日志 `docker logs nervus-app-{name}`。
 
-**Q: LLM 返回空字符串？**
-SDK 内置 `chat_template_kwargs: {"enable_thinking": false}`。自己手写 httpx 调用时记得加这个参数。
+**Q: LLM 返回 `<think>` 标签混入输出？**
+Qwen 3.5 是推理模型，调用时加 `"chat_template_kwargs": {"enable_thinking": false}`。
 
 **Q: SQLite 并发写入报错？**
-改用 `check_same_thread=False`，或换用 Postgres（`POSTGRES_URL` 已注入，用 `asyncpg` 连接）。
+`sqlite3.connect(DB_PATH, check_same_thread=False)`，或换用 Postgres（`POSTGRES_URL` 已注入，用 `asyncpg` 连接）。
 
 **Q: Caddyfile 改了但路由不生效？**
-执行 `docker restart nervus-caddy`，然后查看日志 `docker logs nervus-caddy`。
+执行 `docker restart nervus-caddy`，查看日志 `docker logs nervus-caddy`。
 
 **Q: 镜像构建失败（pip 超时）？**
-所有 pip 已走清华镜像。如仍超时检查网络，或在 requirements.txt 中固定版本号。
+所有 pip 已走清华镜像。仍超时检查网络，或在 requirements.txt 中固定版本号。
+
+**Q: 前端点击按钮后父页面意外滚动或跳转？**
+不要在 iframe 里调用 `scrollIntoView()`，它会穿透 iframe 边界触发父页面滚动。见第 11 节。
+
+**Q: docker-compose.yml 加了 volumes 但容器没有用新文件？**
+改了 volumes 配置必须 `--force-recreate` 重建容器，`restart` 不会重新应用 volume 配置：
+```bash
+docker compose up -d --no-deps --force-recreate app-{app-id}
+```

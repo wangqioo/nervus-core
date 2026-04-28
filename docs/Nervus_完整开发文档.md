@@ -356,7 +356,7 @@ Arbor 只有三个问题：
 
 # 第四部分：前端设计系统
 
-> 本部分直接来源于 `app-prototype.html` 的实现，所有开发必须严格遵守。
+> 本部分直接来源于 `frontend/index.html` 的实现，所有开发必须严格遵守。
 
 ## 4.1 导航结构
 
@@ -1218,6 +1218,8 @@ app.run({ port: 8001 })
 ```
 nervus/
 ├── docker-compose.yml          # 一键启动全部服务
+├── Makefile                    # 常用命令快捷方式（make up/down/test-api/sync-orin 等）
+├── .env.example                # 环境变量模板
 ├── frontend/
 │   └── index.html              # 全屏 SPA，五方向导航，单文件
 ├── ios/                        # iOS Capacitor 壳子
@@ -1238,11 +1240,12 @@ nervus/
 │   ├── reminder/               # :8012
 │   ├── status-sense/           # :8013
 │   ├── workflow-viewer/        # :8014
-│   └── file-manager/           # :8015
+│   ├── file-manager/           # :8015
+│   └── model-manager/          # :8016
 ├── core/                       # 基础设施
 │   ├── arbor/                  # 平台基座（:8090）
 │   │   ├── main.py
-│   │   ├── platform/
+│   │   ├── nervus_platform/    # 平台核心服务模块
 │   │   │   ├── apps/           # App 注册/发现/心跳
 │   │   │   ├── models/         # Chat 网关
 │   │   │   ├── events/         # 事件持久化/查询
@@ -1261,10 +1264,12 @@ nervus/
 │   ├── redis/                  # 上下文缓存（:6379）
 │   └── whisper/                # 本地语音识别（:8081）
 ├── sdk/
-│   └── python/                 # Nervus Python SDK
+│   ├── python/                 # Nervus Python SDK
+│   └── typescript/             # Nervus TypeScript SDK（实验性）
 ├── config/
-│   ├── public.json
-│   └── flows/                  # Flow 配置（热更新）
+│   ├── models.json             # 模型配置（本地 + 云端）
+│   ├── public.json             # 公共配置
+│   └── flows/                  # Flow 配置（热更新，不需要重建镜像）
 │       ├── media-flows.json
 │       ├── meeting-flows.json
 │       └── health-flows.json
@@ -1289,28 +1294,50 @@ apps/app-name/
 
 ## 8.3 llama.cpp 部署配置
 
-```bash
-# Jetson Orin Nano 编译（CUDA 加速 + 多模态支持）
-cmake -DLLAMA_CUDA=ON -DLLAMA_CURL=ON ..
-make -j6
+llama.cpp 在 Orin 上以 **systemd 服务**形式常驻，直接跑在宿主机（绕开 Docker 拿到完整 GPU 访问权）。
 
-# 启动 server（常驻，多模态模型需要 --mmproj 指定视觉投影权重）
-./server \
-  -m /models/qwen3.5-4b-multimodal-q4_k_m.gguf \
-  --mmproj /models/qwen3.5-4b-multimodal-mmproj.gguf \
+```bash
+# ── 编译（Jetson Orin Nano，CUDA 12.x）──────────────────────────
+cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=ON
+cmake --build build --config Release -j$(nproc)
+
+# ── 启动命令（写入 systemd service 文件）──────────────────────────
+GGML_CUDA_DISABLE_GRAPHS=1 \        # Jetson 必须：禁用 CUDA graph，否则崩溃
+/home/nvidia/llama.cpp/build/bin/llama-server \
+  -m /home/nvidia/models/qwen3.5-4b-multimodal-q4_k_m.gguf \
+  --mmproj /home/nvidia/models/qwen3.5-4b-multimodal-mmproj.gguf \
   --port 8080 \
   --ctx-size 4096 \
   --n-gpu-layers 32 \
+  --no-mmap \
   --parallel 4 \
   --host 0.0.0.0
 
-# 文字调用（兼容 OpenAI API 格式）
-POST http://llama-cpp:8080/v1/chat/completions
+# ── systemd 服务管理 ────────────────────────────────────────────
+sudo systemctl start llama-gpu       # 启动
+sudo systemctl stop llama-gpu        # 停止
+sudo systemctl enable llama-gpu      # 开机自启
+sudo journalctl -u llama-gpu -f      # 查看日志
+
+# ── 实测性能（Orin Nano 8GB）───────────────────────────────────
+# 文字推理：~11.97 tok/s
+# 视觉识别：~8 tok/s（含图片编码）
+```
+
+Docker 容器通过 `LLAMA_URL: http://172.20.0.1:8080`（宿主机 bridge IP）访问 llama.cpp。
+
+```bash
+# 文字调用（兼容 OpenAI Chat Completions API）
+POST http://localhost:8080/v1/chat/completions
 Content-Type: application/json
-{ "model": "qwen3.5", "messages": [...] }
+{
+  "model": "qwen3.5",
+  "messages": [{"role": "user", "content": "你好"}],
+  "chat_template_kwargs": {"enable_thinking": false}   # 必须：关闭推理链输出
+}
 
 # 视觉调用（图片分析，同一接口）
-POST http://llama-cpp:8080/v1/chat/completions
+POST http://localhost:8080/v1/chat/completions
 Content-Type: application/json
 {
   "model": "qwen3.5",
@@ -1320,7 +1347,8 @@ Content-Type: application/json
       { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,..." } },
       { "type": "text", "text": "识别食物名称和估算热量" }
     ]
-  }]
+  }],
+  "chat_template_kwargs": {"enable_thinking": false}
 }
 ```
 
@@ -1352,6 +1380,6 @@ Nervus 不是要成为最聪明的 AI。
 
 ---
 
-*文档版本：v1.2 | 2026-04-26*
-*配合文件：`mobile/index.html`（单文件 SPA 全部前端实现）、`ios-shell/`（Capacitor iOS 壳子）*
+*文档版本：v1.0 | 2026-04-28*
+*配合文件：`frontend/index.html`（单文件 SPA 全部前端实现）、`ios/`（Capacitor iOS 壳子）*
 *Nervus · 从未停止存在的系统*

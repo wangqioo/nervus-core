@@ -47,3 +47,11 @@ htmlcov/
 # Memory files (agent session data)
 MEMORY.md
 memory/
+
+# Stale session / scratch files
+project_*.md
+ref_*.md
+feedback_*.md
+
+# macOS
+.DS_Store
