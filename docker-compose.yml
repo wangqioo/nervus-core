@@ -667,6 +667,8 @@ services:
     ports:
     - 8016:8016
     restart: unless-stopped
+    volumes:
+    - ./apps/model-manager/index.html:/app/index.html:ro   # hot-reload: no rebuild needed
   whisper:
     build:
       context: ./core/whisper
