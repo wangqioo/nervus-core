@@ -228,15 +228,6 @@
           <div class="settings-list">
             <div class="setting-row">
               <div class="setting-label">
-                <span>外观模式</span>
-                <span class="setting-sub">{{ theme === 'dark' ? '深色' : '浅色' }}</span>
-              </div>
-              <button class="theme-btn" @click="toggleTheme">
-                {{ theme === 'dark' ? '🌙 切换浅色' : '☀️ 切换深色' }}
-              </button>
-            </div>
-            <div class="setting-row">
-              <div class="setting-label">
                 <span>上传后立即 AI 分析</span>
                 <span class="setting-sub">关闭则后台队列处理</span>
               </div>
