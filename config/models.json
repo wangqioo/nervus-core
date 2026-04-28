@@ -1,8 +1,8 @@
 {
-  "default_text": "qwen3.5",
-  "default_vision": "qwen3.5",
+  "default_text": "deepseek-chat",
+  "default_vision": "glm-4v-flash",
 
-  "fallback_model": "",
+  "fallback_model": "qwen3.5",
 
   "models": [
     {
