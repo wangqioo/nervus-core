@@ -1,13 +1,14 @@
-# Nervus — Developer Makefile (单进程模式)
+# Nervus �?Developer Makefile (单进程模�?
 
-.PHONY: help run test test-api reload-flows
+.PHONY: help run run-chromebox test test-api reload-flows
 
 help:
 	@echo ""
-	@echo "  Nervus — Available commands"
+	@echo "  Nervus �?Available commands"
 	@echo ""
 	@echo "  Run"
 	@echo "    make run             Start Arbor Core (python core/arbor/main.py)"
+	@echo "    make run-chromebox   Start Arbor Core from core/arbor for ChromeOS"
 	@echo ""
 	@echo "  Testing"
 	@echo "    make test            Run all tests"
@@ -21,6 +22,9 @@ help:
 
 run:
 	python core/arbor/main.py
+
+run-chromebox:
+	cd core/arbor && python main.py
 
 # ── Hot-reload ─────────────────────────────────────────────────────────────
 
